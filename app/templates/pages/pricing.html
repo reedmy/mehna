@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}الباقات والأسعار — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section">
+  <div class="center mb-6">
+    <h1>باقات لأصحاب العمل</h1>
+    <p class="muted">ابدأ مجانًا، وارتقِ عندما تحتاج توظيفًا أسرع. لا رسوم على الباحثين أبدًا.</p>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+    {% set plan_meta = {
+      'free': ('البداية', 'لتجربة المنصة ونشر أول وظيفة', 0),
+      'pro': ('الاحترافية', 'للشركات الصغيرة والمتوسطة', 49000),
+      'business': ('الأعمال', 'لفرق التوظيف والمؤسسات', 149000)
+    } %}
+    {% for key, limits in plans.items() %}
+      {% set meta = plan_meta.get(key, (key, '', 0)) %}
+      <div class="card" style="{{ 'border-color:var(--brand-500);box-shadow:var(--shadow-md)' if key == 'pro' }}">
+        {% if key == 'pro' %}<span class="badge badge-brand mb-4">الأكثر اختيارًا</span>{% endif %}
+        <h2>{{ meta[0] }}</h2>
+        <p class="small muted">{{ meta[1] }}</p>
+        <p class="mt-4" style="font-size:var(--fs-3xl);font-weight:800;color:var(--ink-900)">
+          {% if meta[2] == 0 %}مجانًا{% else %}{{ meta[2]|money }}<span class="small muted"> / شهريًا</span>{% endif %}
+        </p>
+        <ul class="detail-list mt-4">
+          <li>{{ limits.active_jobs }} وظيفة نشطة</li>
+          <li>{{ limits.featured_jobs }} وظيفة مميزة</li>
+          <li>{{ limits.team_members }} مستخدم للفريق</li>
+          <li>لوحة متابعة المتقدمين</li>
+          <li>إشعارات فورية لكل طلب</li>
+        </ul>
+        <a class="btn {{ 'btn-primary' if key == 'pro' else 'btn-ghost' }} btn-block mt-6"
+           href="{{ url_for('auth.register', role='employer') }}">ابدأ الآن</a>
+      </div>
+    {% endfor %}
+  </div>
+
+  <p class="xs muted center mt-6">
+    الأسعار بالدينار العراقي. الدفع عبر زين كاش أو تحويل بنكي — يُفعّل بعد التحقق.
+  </p>
+</div>
+{% endblock %}

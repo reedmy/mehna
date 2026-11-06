@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}ملف الشركة — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <h1 style="font-size:var(--fs-2xl)" class="mb-2">ملف الشركة</h1>
+  <p class="muted small mb-6">هذه البيانات تظهر في صفحة الشركة وفي كل وظيفة تنشرها.</p>
+
+  <div class="grid" style="grid-template-columns:1.5fr 1fr;align-items:start">
+    <form method="post" class="card stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="name">اسم الشركة</label>
+        <input class="input" id="name" name="name" required value="{{ company.name if company else '' }}">
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="city">المدينة</label>
+          <select class="select" id="city" name="city">
+            <option value="">اختر المدينة</option>
+            {% for city in cities %}
+              <option value="{{ city }}" {{ 'selected' if company and company.city == city }}>{{ city }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="industry">القطاع</label>
+          <select class="select" id="industry" name="industry">
+            <option value="">اختر القطاع</option>
+            {% for industry in industries %}
+              <option value="{{ industry }}" {{ 'selected' if company and company.industry == industry }}>{{ industry }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="size">حجم الشركة</label>
+          <select class="select" id="size" name="size">
+            <option value="">اختر الحجم</option>
+            {% for value, label in sizes %}
+              <option value="{{ value }}" {{ 'selected' if company and company.size == value }}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="website">الموقع الإلكتروني</label>
+          <input class="input" id="website" name="website" dir="ltr" value="{{ company.website if company else '' }}" placeholder="https://">
+        </div>
+      </div>
+      <div class="field">
+        <label for="description">وصف الشركة</label>
+        <textarea class="textarea" id="description" name="description" rows="5">{{ company.description if company else '' }}</textarea>
+      </div>
+      <button class="btn btn-primary" type="submit">{{ 'حفظ التغييرات' if company else 'إنشاء ملف الشركة' }}</button>
+    </form>
+
+    <aside class="stack">
+      <div class="card">
+        <h3 style="font-size:var(--fs-md)" class="mb-2">{{ ui.icon('shield', 16) }} التوثيق</h3>
+        {% if not company %}
+          <p class="small muted">أنشئ ملف الشركة أولًا، ثم اطلب التوثيق.</p>
+        {% elif company.is_verified %}
+          <span class="badge badge-success mb-2">موثّقة</span>
+          <p class="small muted">آخر تحقق: {{ company.verified_at|date_ar }}. تظهر شارة التوثيق على كل وظائفك.</p>
+        {% elif company.verification_status == 'pending' %}
+          <span class="badge badge-warning mb-2">قيد المراجعة</span>
+          <p class="small muted">راجع فريقنا الطلب خلال يوم عمل. يمكنك نشر وظيفة واحدة كمسودة في الأثناء.</p>
+        {% elif company.verification_status == 'rejected' %}
+          <span class="badge badge-danger mb-2">مرفوض</span>
+          <p class="small muted">{{ company.verification_note or 'لم تُستوفَ الشروط.' }}</p>
+          <form method="post" action="{{ url_for('employer.request_verification') }}" class="mt-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+              <label for="note">ملاحظة للمراجعة</label>
+              <textarea class="textarea" id="note" name="note" rows="3" style="min-height:80px"></textarea>
+            </div>
+            <button class="btn btn-ghost btn-block mt-2" type="submit">إعادة إرسال الطلب</button>
+          </form>
+        {% else %}
+          <span class="badge mb-2">غير موثّقة</span>
+          <p class="small muted">التوثيق يزيد ثقة الباحثين ويسمح بنشر الوظائف مباشرة.</p>
+          <form method="post" action="{{ url_for('employer.request_verification') }}" class="mt-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+              <label for="note">رقم السجل التجاري أو ملاحظة</label>
+              <textarea class="textarea" id="note" name="note" rows="3" style="min-height:80px"
+                        placeholder="مثال: سجل تجاري رقم 12345 — بغداد"></textarea>
+            </div>
+            <button class="btn btn-primary btn-block mt-2" type="submit">طلب التوثيق</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <div class="card card-flat">
+        <h3 style="font-size:var(--fs-md)" class="mb-2">نصائح للتوثيق أسرع</h3>
+        <ul class="detail-list">
+          <li>استخدم بريدًا بنطاق الشركة إن أمكن.</li>
+          <li>أضف رقم هاتف أرضي أو موقعًا رسميًا.</li>
+          <li>اكتب وصفًا واضحًا لنشاط الشركة.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

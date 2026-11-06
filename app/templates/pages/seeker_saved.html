@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+{% from "components/job_card.html" import job_card %}
+
+{% block title %}الوظائف المحفوظة — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <h1 style="font-size:var(--fs-2xl)" class="mb-2">الوظائف المحفوظة</h1>
+  <p class="muted small mb-6">ارجع إليها لاحقًا وقدّم عندما تكون جاهزًا.</p>
+
+  {% if saved %}
+    <div class="job-grid">
+      {% for row in saved %}
+        {% if row.job %}{{ job_card(row.job, saved=true) }}{% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    {% with title='لا توجد وظائف محفوظة', body='اضغط أيقونة الحفظ في أي وظيفة لتعود إليها هنا.', icon='bookmark', cta_label='تصفح الوظائف', cta_url=url_for('public.jobs') %}
+      {% include "components/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>
+{% endblock %}

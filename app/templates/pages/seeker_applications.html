@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}طلباتي — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <div class="split mb-6">
+    <div>
+      <h1 style="font-size:var(--fs-2xl)">طلباتي</h1>
+      <p class="muted small">تابع كل طلب خطوة بخطوة — نُشعرك عند أي تحديث.</p>
+    </div>
+    <a class="btn btn-ghost" href="{{ url_for('public.jobs') }}">{{ ui.icon('search', 15) }} وظائف أخرى</a>
+  </div>
+
+  {% if applications %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr><th>الوظيفة</th><th>الشركة</th><th>الحالة</th><th>آخر تحديث</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for app in applications %}
+            <tr>
+              <td>
+                <a href="{{ url_for('public.job_detail', job_id=app.job.id, slug=app.job.slug) }}" class="strong">
+                  {{ app.job.title }}
+                </a>
+                <div class="xs muted">{{ app.job.city or '—' }} · {{ app.job.job_type|job_type_label }}</div>
+              </td>
+              <td>{{ app.job.company.name }}</td>
+              <td><span class="badge badge-{{ status_tones.get(app.status, 'neutral') }}">{{ status_labels.get(app.status, app.status) }}</span></td>
+              <td class="muted xs">{{ app.status_updated_at|relative_time }}</td>
+              <td>
+                {% if app.status not in ['accepted', 'withdrawn', 'rejected'] %}
+                  <form method="post" action="{{ url_for('seeker.withdraw', application_id=app.id) }}"
+                        onsubmit="return confirm('سحب الطلب؟')">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-ghost btn-sm" type="submit">سحب</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {% with title='لا توجد طلبات بعد', body='كل رحلة تبدأ بخطوة — تصفح الوظائف وقدّم على ما يناسبك.', icon='file', cta_label='تصفح الوظائف', cta_url=url_for('public.jobs') %}
+      {% include "components/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>
+{% endblock %}

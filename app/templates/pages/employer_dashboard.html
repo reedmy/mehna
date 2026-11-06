@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}لوحة صاحب العمل — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <div class="split mb-6">
+    <div>
+      <h1 style="font-size:var(--fs-2xl)">{{ company.name }}</h1>
+      <p class="muted small">
+        {% if company.is_verified %}
+          <span class="badge badge-success">{{ ui.icon('shield', 11) }} موثّقة</span>
+        {% elif company.verification_status == 'pending' %}
+          <span class="badge badge-warning">التوثيق قيد المراجعة</span>
+        {% else %}
+          <span class="badge">غير موثّقة</span>
+          <a class="small" href="{{ url_for('employer.company') }}">اطلب التوثيق</a>
+        {% endif %}
+      </p>
+    </div>
+    <div class="row">
+      <a class="btn btn-ghost" href="{{ url_for('employer.company') }}">{{ ui.icon('building', 15) }} ملف الشركة</a>
+      <a class="btn btn-primary" href="{{ url_for('employer.job_new') }}">{{ ui.icon('plus', 16) }} وظيفة جديدة</a>
+    </div>
+  </div>
+
+  <div class="stat-grid mb-6">
+    <div class="stat"><div class="stat-label">وظائف نشطة</div><div class="stat-value">{{ stats.active_jobs }}</div><div class="stat-foot">من أصل {{ limit }} في باقتك</div></div>
+    <div class="stat"><div class="stat-label">كل المتقدمين</div><div class="stat-value">{{ stats.total_applications }}</div></div>
+    <div class="stat"><div class="stat-label">طلبات جديدة</div><div class="stat-value">{{ stats.new_applications }}</div><div class="stat-foot"><a href="{{ url_for('employer.applicants', status='submitted') }}">راجعها</a></div></div>
+    <div class="stat"><div class="stat-label">الباقة</div><div class="stat-value" style="font-size:var(--fs-lg)">{{ current_user.plan|upper }}</div><div class="stat-foot"><a href="{{ url_for('public.pricing') }}">ترقية</a></div></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.4fr 1fr;align-items:start">
+    <section class="panel">
+      <div class="panel-head">
+        <h2 style="font-size:var(--fs-md)">وظائفك</h2>
+        <a class="small" href="{{ url_for('employer.jobs') }}">إدارة الكل</a>
+      </div>
+      {% if jobs %}
+        <div class="table-wrap" style="border:0">
+          <table class="data">
+            <thead><tr><th>الوظيفة</th><th>الحالة</th><th>متقدمون</th><th>مشاهدات</th></tr></thead>
+            <tbody>
+              {% for job in jobs %}
+                <tr>
+                  <td><a href="{{ url_for('public.job_detail', job_id=job.id, slug=job.slug) }}">{{ job.title }}</a></td>
+                  <td><span class="badge {{ 'badge-success' if job.is_open else 'badge-warning' }}">{{ job_status_labels.get(job.status, job.status) }}</span></td>
+                  <td>{{ job.applications_count }}</td>
+                  <td>{{ job.views_count }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="panel-body">
+          {% with title='لم تنشر أي وظيفة بعد', body='انشر أول وظيفة وابدأ باستقبال الطلبات.', icon='briefcase', cta_label='وظيفة جديدة', cta_url=url_for('employer.job_new') %}
+            {% include "components/empty_state.html" %}
+          {% endwith %}
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <h2 style="font-size:var(--fs-md)">أحدث المتقدمين</h2>
+        <a class="small" href="{{ url_for('employer.applicants') }}">الكل</a>
+      </div>
+      {% if recent %}
+        <div style="padding:var(--sp-2)">
+          {% for app in recent %}
+            <div class="notif-item">
+              <div class="row">
+                <span class="avatar">{{ app.seeker.full_name|initials }}</span>
+                <div class="grow">
+                  <strong>{{ app.seeker.full_name }}</strong>
+                  <span>{{ app.job.title }} · {{ app.created_at|relative_time }}</span>
+                </div>
+                <span class="badge badge-{{ status_tones.get(app.status, 'neutral') }}">{{ status_labels.get(app.status, app.status) }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="panel-body"><p class="small muted center">لا يوجد متقدمون بعد.</p></div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="card mt-4">
+    <div class="split mb-2">
+      <h3 style="font-size:var(--fs-md)">استهلاك الباقة</h3>
+      <span class="small muted">{{ used }} / {{ limit }} وظيفة</span>
+    </div>
+    <div class="progress"><span style="width:{{ (used / limit * 100) if limit else 0 }}%"></span></div>
+  </div>
+</div>
+{% endblock %}

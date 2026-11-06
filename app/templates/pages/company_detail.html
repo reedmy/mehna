@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+{% from "components/job_card.html" import job_card %}
+
+{% block title %}{{ company.name }} — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <div class="card mb-6">
+    <div class="row" style="align-items:flex-start;gap:var(--sp-4)">
+      <div class="logo" style="width:72px;height:72px;font-size:var(--fs-xl)">
+        {% if company.logo_url %}<img src="{{ company.logo_url }}" alt="{{ company.name }}">{% else %}{{ company.initials }}{% endif %}
+      </div>
+      <div class="grow">
+        <h1 style="font-size:var(--fs-2xl)">{{ company.name }}</h1>
+        <p class="muted">{{ company.industry or '—' }}{% if company.city %} · {{ company.city }}{% endif %}</p>
+        <div class="cluster mt-2">
+          {% if company.is_verified %}
+            <span class="badge badge-success">{{ ui.icon('shield', 11) }} موثّقة</span>
+            <span class="xs muted">آخر تحقق: {{ company.verified_at|date_ar }}</span>
+          {% else %}
+            <span class="badge badge-warning">غير موثّقة</span>
+          {% endif %}
+          <span class="badge">{{ jobs|length }} وظيفة مفتوحة</span>
+        </div>
+      </div>
+      {% if company.website %}
+        <a class="btn btn-ghost btn-sm" href="{{ company.website }}" target="_blank" rel="noopener nofollow">
+          {{ ui.icon('globe', 14) }} الموقع
+        </a>
+      {% endif %}
+      {% if current_user.is_authenticated and company.owner_id != current_user.id %}
+        <form method="post" action="{{ url_for('messages.start', user_id=company.owner_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('message', 14) }} تواصل</button>
+        </form>
+      {% endif %}
+    </div>
+    {% if company.description %}
+      <p class="mt-4" style="color:var(--ink-600)">{{ company.description }}</p>
+    {% endif %}
+  </div>
+
+  <h2 class="mb-4">الوظائف المفتوحة</h2>
+  {% if jobs %}
+    <div class="job-grid">{% for job in jobs %}{{ job_card(job) }}{% endfor %}</div>
+  {% else %}
+    {% with title='لا توجد وظائف مفتوحة حاليًا', body='تابع الشركة لاحقًا أو تصفّح وظائف أخرى.', icon='briefcase' %}
+      {% include "components/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>
+{% endblock %}

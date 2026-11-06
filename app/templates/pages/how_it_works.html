@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}كيف تعمل مهنة — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section">
+  <div class="center mb-6">
+    <h1>كيف تعمل مهنة؟</h1>
+    <p class="muted">ثلاث خطوات للباحث، وأربع لصاحب العمل.</p>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+    <div class="card">
+      <span class="badge badge-brand mb-4">للباحث عن عمل</span>
+      <ol class="detail-list">
+        <li>أنشئ حسابك وأكمل ملفك الشخصي (5 دقائق).</li>
+        <li>ابحث بلهجتك: «سواق» أو «سائق» — النتائج نفسها.</li>
+        <li>قدّم بضغطة واحدة وتابع حالة كل طلب.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <span class="badge badge-accent mb-4">لصاحب العمل</span>
+      <ol class="detail-list">
+        <li>سجّل شركتك وأرسل طلب التوثيق.</li>
+        <li>انشر الوظيفة بمتطلبات واضحة وراتب معلن.</li>
+        <li>استقبل الطلبات في لوحة واحدة.</li>
+        <li>حدّث حالة كل متقدم — يُشعر تلقائيًا.</li>
+      </ol>
+    </div>
+    <div class="card">
+      <span class="badge badge-success mb-4">لماذا نختلف</span>
+      <ol class="detail-list">
+        <li>تحقق حقيقي من الشركات، لا شارات شكلية.</li>
+        <li>حماية من الوظائف التي تطلب مالًا.</li>
+        <li>مصمّمة للموبايل وسرعة 4G.</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="center mt-6">
+    <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">أنشئ حسابك مجانًا</a>
+  </div>
+</div>
+{% endblock %}

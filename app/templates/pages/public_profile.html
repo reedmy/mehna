@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}{{ profile_user.full_name }} — {{ site_name }}{% endblock %}
+{% block description %}{{ (profile.headline or profile.bio or profile_user.full_name)|striptags|truncate(150) }}{% endblock %}
+{% block body_class %}public-profile-page{% endblock %}
+
+{% block content %}
+{% set role_labels = {'seeker': 'باحث عن عمل', 'employer': 'صاحب عمل', 'admin': 'مدير النظام'} %}
+<div class="profile-page">
+
+  <div class="profile-hero">
+    <div class="profile-cover">
+      {% if profile and profile.cover_path %}
+        <img src="{{ url_for('profiles.cover', user_id=profile_user.id) }}" alt="غلاف {{ profile_user.full_name }}">
+      {% endif %}
+    </div>
+    <div class="profile-head">
+      <div class="profile-avatar-xl">
+        {% if profile_user.display_avatar %}
+          <img src="{{ profile_user.display_avatar }}" alt="{{ profile_user.full_name }}" referrerpolicy="no-referrer">
+        {% else %}
+          {{ profile_user.full_name|initials }}
+        {% endif %}
+      </div>
+      <div class="profile-identity">
+        <h1>{{ profile_user.full_name }}</h1>
+        {% if profile and profile.headline %}<p class="headline">{{ profile.headline }}</p>{% endif %}
+        <div class="place">
+          {% if profile and profile.city %}<span>{{ ui.icon('pin', 13) }} {{ profile.city }}{% if profile.country %}، {{ profile.country }}{% endif %}</span>{% endif %}
+          <span class="badge">{{ role_labels.get(profile_user.role, profile_user.role) }}</span>
+          {% if profile and profile.is_open_to_work and profile_user.role == 'seeker' %}
+            <span class="badge badge-success">{{ ui.icon('check', 11) }} متاح للعمل</span>
+          {% endif %}
+          {% if profile_user.email_verified_at %}<span class="badge badge-info">{{ ui.icon('shield', 11) }} بريد موثّق</span>{% endif %}
+        </div>
+      </div>
+      <div class="profile-actions">
+        {% if flags.is_owner %}
+          <a class="btn btn-primary btn-sm" href="{{ url_for('seeker.profile') if profile_user.role == 'seeker' else url_for('employer.company') }}">
+            {{ ui.icon('edit', 14) }} تعديل الملف
+          </a>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('seeker.dashboard') if profile_user.role == 'seeker' else url_for('employer.dashboard') }}">لوحتي</a>
+        {% elif flags.can_message %}
+          <form method="post" action="{{ url_for('messages.start', user_id=profile_user.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('message', 14) }} رسالة</button>
+          </form>
+        {% endif %}
+        {% if company %}
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('public.company_detail', slug=company.slug) }}">{{ ui.icon('building', 14) }} ملف الشركة</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if not flags.visible %}
+    <div class="profile-locked">
+      <div class="empty-icon">{{ ui.icon('lock', 24) }}</div>
+      <h2>هذا الملف خاص</h2>
+      <p class="muted small" style="max-width:46ch">
+        اختار صاحب الملف عدم عرض تفاصيله للزوار. سجّل الدخول كصاحب عمل أو تواصل معه إن كنت تعرفه.
+      </p>
+      {% if not current_user.is_authenticated %}
+        <a class="btn btn-primary btn-sm" href="{{ url_for('auth.login', next=request.path) }}">تسجيل الدخول</a>
+      {% endif %}
+    </div>
+  {% else %}
+    <div class="profile-layout">
+      <div class="profile-main">
+
+        {% if profile and profile.bio %}
+          <section class="profile-section">
+            <h2>{{ ui.icon('user', 16) }} نبذة</h2>
+            <p class="about-text">{{ profile.bio }}</p>
+          </section>
+        {% endif %}
+
+        {% if flags.experience and profile and profile.experiences %}
+          <section class="profile-section">
+            <h2>{{ ui.icon('briefcase', 16) }} الخبرة العملية</h2>
+            <div class="timeline">
+              {% for item in profile.experiences %}
+                <article class="timeline-item">
+                  <div class="timeline-icon">{{ ui.icon('building', 18) }}</div>
+                  <div class="grow">
+                    <h3>{{ item.title }}</h3>
+                    <div class="org">{{ item.company_name }}{% if item.employment_type %} · {{ job_type_labels.get(item.employment_type, item.employment_type) }}{% endif %}</div>
+                    <div class="period">{{ item.period_label }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+                    {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if flags.education and profile and profile.educations %}
+          <section class="profile-section">
+            <h2>{{ ui.icon('graduation', 16) }} التعليم</h2>
+            <div class="timeline">
+              {% for item in profile.educations %}
+                <article class="timeline-item">
+                  <div class="timeline-icon">{{ ui.icon('graduation', 18) }}</div>
+                  <div class="grow">
+                    <h3>{{ item.institution }}</h3>
+                    <div class="org">{{ item.degree or '' }}{% if item.field_of_study %} · {{ item.field_of_study }}{% endif %}</div>
+                    <div class="period">{{ item.period_label }}{% if item.grade %} · {{ item.grade }}{% endif %}</div>
+                    {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if (flags.skills and profile and profile.skill_names) or (flags.languages and profile and profile.language_names) %}
+          <section class="profile-section">
+            <h2>{{ ui.icon('star', 16) }} المهارات واللغات</h2>
+            {% if flags.skills and profile and profile.skills_list %}
+              <div class="chip-list mb-4">
+                {% for item in profile.skills_list %}
+                  <span class="skill-pill">{{ item.name }}
+                    <small style="opacity:.68">{{ skill_levels.get(item.level, item.level) if skill_levels is defined else '' }}</small>
+                  </span>
+                {% endfor %}
+              </div>
+            {% elif flags.skills and profile and profile.skill_names %}
+              <div class="chip-list mb-4">{% for name in profile.skill_names %}<span class="skill-pill">{{ name }}</span>{% endfor %}</div>
+            {% endif %}
+            {% if flags.languages and profile and profile.languages_list %}
+              <h3 class="small mb-2">اللغات</h3>
+              <div class="chip-list">
+                {% for item in profile.languages_list %}
+                  <span class="skill-pill" style="background:var(--ink-50);border-color:var(--ink-200);color:var(--ink-700)">{{ item.name }}
+                    <small style="opacity:.68">{{ language_levels.get(item.proficiency, item.proficiency) if language_levels is defined else '' }}</small>
+                  </span>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </section>
+        {% endif %}
+
+        {% if flags.certifications and profile and profile.certifications %}
+          <section class="profile-section">
+            <h2>{{ ui.icon('award', 16) }} الشهادات</h2>
+            <div class="timeline">
+              {% for item in profile.certifications %}
+                <article class="timeline-item">
+                  <div class="timeline-icon">{{ ui.icon('award', 18) }}</div>
+                  <div class="grow">
+                    <h3>{{ item.name }}</h3>
+                    <div class="org">{{ item.issuer or '' }}</div>
+                    {% if item.issue_date %}<div class="period">{{ item.issue_date|date_ar }}{% if item.expiry_date %} – {{ item.expiry_date|date_ar }}{% endif %}</div>{% endif %}
+                    {% if item.credential_url %}
+                      <a class="xs" href="{{ item.credential_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('external', 12) }} عرض الشهادة</a>
+                    {% endif %}
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if flags.projects and profile and profile.projects %}
+          <section class="profile-section">
+            <h2>{{ ui.icon('folder', 16) }} المشاريع</h2>
+            <div class="timeline">
+              {% for item in profile.projects %}
+                <article class="timeline-item">
+                  <div class="timeline-icon">{{ ui.icon('folder', 18) }}</div>
+                  <div class="grow">
+                    <h3>{{ item.title }}</h3>
+                    {% if item.technologies %}<div class="org">{{ item.technologies|join('، ') }}</div>{% endif %}
+                    {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+                    <div class="row mt-2" style="gap:12px">
+                      {% if item.project_url %}<a class="xs" href="{{ item.project_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('external', 12) }} المشروع</a>{% endif %}
+                      {% if item.repo_url %}<a class="xs" href="{{ item.repo_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('github', 12) }} الكود</a>{% endif %}
+                    </div>
+                  </div>
+                </article>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+
+        {% if not (profile and (profile.bio or profile.experiences or profile.educations or profile.skill_names or profile.certifications or profile.projects)) %}
+          <div class="panel-body">
+            {% with title='الملف ما زال قيد الإعداد', body='لم يضف صاحب الملف تفاصيل بعد.', icon='user' %}
+              {% include "components/empty_state.html" %}
+            {% endwith %}
+          </div>
+        {% endif %}
+      </div>
+
+      <aside class="profile-side">
+        <div class="profile-section">
+          <h2>معلومات التواصل</h2>
+          <div class="contact-list">
+            {% if flags.email %}
+              <a href="mailto:{{ flags.email }}" dir="ltr">{{ ui.icon('mail', 15) }} {{ flags.email }}</a>
+            {% endif %}
+            {% if flags.phone %}
+              <a href="tel:{{ flags.phone }}" dir="ltr">{{ ui.icon('phone', 15) }} {{ flags.phone }}</a>
+            {% endif %}
+            {% if flags.location and profile and profile.city %}
+              <span>{{ ui.icon('pin', 15) }} {{ profile.city }}{% if profile.country %}، {{ profile.country }}{% endif %}</span>
+            {% endif %}
+            {% if flags.location and profile and profile.address %}
+              <span>{{ ui.icon('map', 15) }} {{ profile.address }}</span>
+            {% endif %}
+            {% if not flags.email and not flags.phone and not (flags.location and profile and profile.city) %}
+              <p class="xs muted">أخفى صاحب الملف بيانات التواصل.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if flags.cv and profile and profile.has_cv %}
+          <div class="profile-section">
+            <h2>السيرة الذاتية</h2>
+            {% if profile.cv_path %}
+              <a class="btn btn-primary btn-sm btn-block" href="{{ url_for('profiles.cv', user_id=profile_user.id) }}">
+                {{ ui.icon('download', 14) }} تنزيل السيرة الذاتية
+              </a>
+            {% endif %}
+            {% if profile.cv_url %}
+              <a class="btn btn-ghost btn-sm btn-block mt-2" href="{{ profile.cv_url }}" target="_blank" rel="noopener nofollow">
+                {{ ui.icon('external', 14) }} رابط السيرة الذاتية
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+
+        <div class="profile-section">
+          <h2>روابط مهنية</h2>
+          <div class="contact-list">
+            {% if profile and profile.linkedin_url %}<a href="{{ profile.linkedin_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('linkedin', 15) }} LinkedIn</a>{% endif %}
+            {% if profile and profile.github_url %}<a href="{{ profile.github_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('github', 15) }} GitHub</a>{% endif %}
+            {% if profile and profile.portfolio_url %}<a href="{{ profile.portfolio_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('link', 15) }} معرض الأعمال</a>{% endif %}
+            {% if profile and profile.website_url %}<a href="{{ profile.website_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('globe', 15) }} الموقع الشخصي</a>{% endif %}
+            {% if profile and profile.twitter_url %}<a href="{{ profile.twitter_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('twitter', 15) }} X / Twitter</a>{% endif %}
+            {% if profile and profile.facebook_url %}<a href="{{ profile.facebook_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('facebook', 15) }} Facebook</a>{% endif %}
+            {% if not (profile and (profile.linkedin_url or profile.github_url or profile.portfolio_url or profile.website_url or profile.twitter_url or profile.facebook_url)) %}
+              <p class="xs muted">لا توجد روابط مهنية بعد.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if applications_count is not none %}
+          <div class="profile-section">
+            <h2>نشاط الحساب</h2>
+            <div class="meta-row"><dt>طلبات مقدَّمة</dt><dd>{{ applications_count }}</dd></div>
+            {% if profile %}<div class="meta-row"><dt>اكتمال الملف</dt><dd>{{ profile.completeness }}%</dd></div>{% endif %}
+          </div>
+        {% endif %}
+
+        {% if profile and profile.is_open_to_work %}
+          <div class="rail-card">
+            <div class="rail-card-body">
+              <h2>{{ ui.icon('sparkle', 14) }} متاح لفرص جديدة</h2>
+              <p class="xs muted mt-2">تواصل معه مباشرة عبر رسائل مهنة.</p>
+              {% if flags.can_message %}
+                <form method="post" action="{{ url_for('messages.start', user_id=profile_user.id) }}" class="mt-4">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn btn-primary btn-sm btn-block" type="submit">إرسال رسالة</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+      </aside>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

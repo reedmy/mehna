@@ -1,0 +1,677 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}ملفي المهني — {{ site_name }}{% endblock %}
+{% block body_class %}profile-manage-page{% endblock %}
+
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{% block content %}
+<div class="dashboard-shell">
+  <div class="split mb-4">
+    <div>
+      <h1 style="font-size:var(--fs-2xl)">ملفي المهني</h1>
+      <p class="muted small">ملف قوي يزيد فرصك لدى أصحاب العمل. احفظ كل قسم بعد تعديله.</p>
+    </div>
+    <div class="row">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('profiles.public_profile', user_id=current_user.id) }}">
+        {{ ui.icon('eye', 15) }} عرض الملف العام
+      </a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('seeker.dashboard') }}">{{ ui.icon('grid', 15) }} لوحتي</a>
+    </div>
+  </div>
+
+  <div class="card mb-4" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div class="upload-preview" style="width:64px;height:64px;font-size:var(--fs-lg)">
+      {% if current_user.display_avatar %}
+        <img src="{{ current_user.display_avatar }}" alt="" referrerpolicy="no-referrer">
+      {% else %}{{ current_user.full_name|initials }}{% endif %}
+    </div>
+    <div class="grow">
+      <div class="split">
+        <strong>{{ current_user.full_name }}</strong>
+        <strong class="small" style="color:var(--brand-700)">{{ profile.completeness }}%</strong>
+      </div>
+      <div class="progress mt-2"><span style="width:{{ profile.completeness }}%"></span></div>
+      <p class="xs muted mt-2">{{ profile.headline or 'أضف مسمّاك المهني ليظهر في نتائج البحث.' }}</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.account') }}">{{ ui.icon('settings', 14) }} بيانات الحساب</a>
+  </div>
+
+  <div class="profile-manager">
+    <aside class="profile-nav" aria-label="أقسام الملف">
+      <div class="profile-nav-card">
+        {% for key, label, icon_name in sections %}
+          <a href="#{{ key }}">{{ ui.icon(icon_name, 15) }} {{ label }}</a>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <div class="profile-editor">
+
+      {# ── Basic ── #}
+      <section class="editor-card" id="basic">
+        <div class="editor-head">
+          <div>
+            <h2>{{ ui.icon('user', 16) }} البيانات الأساسية</h2>
+            <p>الاسم والهاتف يُعدّلان من إعدادات الحساب. هنا تكتب نبذتك ومسمّاك.</p>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.account') }}">بيانات الحساب</a>
+        </div>
+        <div class="editor-body">
+          <div class="upload-row">
+            <div class="upload-preview">
+              {% if current_user.display_avatar %}
+                <img src="{{ current_user.display_avatar }}" alt="صورة الملف الحالية" referrerpolicy="no-referrer">
+              {% else %}{{ current_user.full_name|initials }}{% endif %}
+            </div>
+            <div class="grow">
+              <strong class="small">صورة الملف</strong>
+              <p class="xs muted">JPG أو PNG أو WebP، حتى 5 ميغابايت. تُقصّ تلقائيًا إلى مربع.</p>
+              <form method="post" action="{{ url_for('seeker.profile_avatar') }}" enctype="multipart/form-data" class="upload-actions mt-2">
+                {{ csrf() }}
+                <label class="visually-hidden" for="avatar-file">اختر صورة الملف</label>
+                <input id="avatar-file" type="file" name="avatar" accept="image/png,image/jpeg,image/webp" required>
+                <button class="btn btn-soft btn-sm" type="submit">{{ ui.icon('upload', 14) }} رفع الصورة</button>
+              </form>
+              {% if current_user.profile and current_user.profile.avatar_path %}
+                <form method="post" action="{{ url_for('seeker.profile_avatar_remove') }}" class="mt-2">
+                  {{ csrf() }}
+                  <button class="btn btn-ghost btn-sm" type="submit">{{ ui.icon('trash', 14) }} إزالة الصورة</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="upload-row">
+            <div class="upload-preview cover">
+              {% if profile.cover_path %}
+                <img src="{{ url_for('profiles.cover', user_id=current_user.id) }}" alt="صورة الغلاف الحالية">
+              {% else %}
+                <span class="xs" style="color:#fff;opacity:.85">لا يوجد غلاف</span>
+              {% endif %}
+            </div>
+            <div class="grow">
+              <strong class="small">صورة الغلاف</strong>
+              <p class="xs muted">تظهر أعلى ملفك العام. المقاس المفضل 1600×600.</p>
+              <form method="post" action="{{ url_for('seeker.profile_cover') }}" enctype="multipart/form-data" class="upload-actions mt-2">
+                {{ csrf() }}
+                <label class="visually-hidden" for="cover-file">اختر صورة الغلاف</label>
+                <input id="cover-file" type="file" name="cover" accept="image/png,image/jpeg,image/webp" required>
+                <button class="btn btn-soft btn-sm" type="submit">{{ ui.icon('upload', 14) }} رفع الغلاف</button>
+              </form>
+              {% if profile.cover_path %}
+                <form method="post" action="{{ url_for('seeker.profile_cover_remove') }}" class="mt-2">
+                  {{ csrf() }}
+                  <button class="btn btn-ghost btn-sm" type="submit">{{ ui.icon('trash', 14) }} إزالة الغلاف</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+
+          <form method="post" action="{{ url_for('seeker.profile_basic') }}" class="stack" novalidate>
+            {{ csrf() }}
+            <div class="field">
+              <label for="headline">المسمى المهني</label>
+              <input class="input" id="headline" name="headline" maxlength="160" value="{{ profile.headline or '' }}"
+                     placeholder="مثال: مطوّر Backend — Python وFlask">
+            </div>
+            <div class="field">
+              <label for="bio">نبذة عني</label>
+              <textarea class="textarea" id="bio" name="bio" rows="6" maxlength="4000"
+                        placeholder="اكتب ملخصًا مهنيًا موجزًا: خبرتك، تخصصك، وما تبحث عنه.">{{ profile.bio or '' }}</textarea>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="city">المدينة</label>
+                <select class="select" id="city" name="city">
+                  <option value="">اختر المدينة</option>
+                  {% for city in cities %}<option value="{{ city }}" {{ 'selected' if profile.city == city }}>{{ city }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label for="country">الدولة</label>
+                <input class="input" id="country" name="country" maxlength="80" value="{{ profile.country or 'العراق' }}">
+              </div>
+              <div class="field">
+                <label for="address">العنوان (اختياري)</label>
+                <input class="input" id="address" name="address" maxlength="160" value="{{ profile.address or '' }}">
+              </div>
+              <div class="field">
+                <label for="experience_years">سنوات الخبرة</label>
+                <input class="input" id="experience_years" name="experience_years" type="number" min="0" max="60"
+                       inputmode="numeric" value="{{ profile.experience_years or 0 }}">
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="linkedin_url">LinkedIn</label>
+                <input class="input" id="linkedin_url" name="linkedin_url" type="url" dir="ltr" maxlength="255"
+                       value="{{ profile.linkedin_url or '' }}" placeholder="https://linkedin.com/in/…">
+              </div>
+              <div class="field">
+                <label for="github_url">GitHub</label>
+                <input class="input" id="github_url" name="github_url" type="url" dir="ltr" maxlength="255"
+                       value="{{ profile.github_url or '' }}" placeholder="https://github.com/…">
+              </div>
+              <div class="field">
+                <label for="portfolio_url">معرض الأعمال</label>
+                <input class="input" id="portfolio_url" name="portfolio_url" type="url" dir="ltr" maxlength="255"
+                       value="{{ profile.portfolio_url or '' }}" placeholder="https://…">
+              </div>
+              <div class="field">
+                <label for="website_url">الموقع الشخصي</label>
+                <input class="input" id="website_url" name="website_url" type="url" dir="ltr" maxlength="255"
+                       value="{{ profile.website_url or '' }}" placeholder="https://…">
+              </div>
+              <div class="field">
+                <label for="twitter_url">X / Twitter</label>
+                <input class="input" id="twitter_url" name="twitter_url" type="url" dir="ltr" maxlength="255"
+                       value="{{ profile.twitter_url or '' }}" placeholder="https://x.com/…">
+              </div>
+              <div class="field">
+                <label for="facebook_url">Facebook</label>
+                <input class="input" id="facebook_url" name="facebook_url" type="url" dir="ltr" maxlength="255"
+                       value="{{ profile.facebook_url or '' }}" placeholder="https://facebook.com/…">
+              </div>
+            </div>
+            <div class="row" style="gap:16px">
+              <label class="check">
+                <input type="checkbox" name="is_open_to_work" value="1" {{ 'checked' if profile.is_open_to_work }}>
+                متاح للعمل الآن
+              </label>
+              <label class="check">
+                <input type="checkbox" name="open_to_relocate" value="1" {{ 'checked' if profile.open_to_relocate }}>
+                مستعد للانتقال بين المدن
+              </label>
+            </div>
+            <div class="field">
+              <label for="cv_url">رابط سيرة ذاتية خارجي (اختياري)</label>
+              <input class="input" id="cv_url" name="cv_url" type="url" dir="ltr" maxlength="512"
+                     value="{{ profile.cv_url or '' }}" placeholder="https://drive.google.com/…">
+              <span class="hint">يمكنك رفع ملف PDF من قسم الخصوصية بدلًا من الرابط.</span>
+            </div>
+            <div><button class="btn btn-primary" type="submit">{{ ui.icon('check', 15) }} حفظ البيانات الأساسية</button></div>
+          </form>
+        </div>
+      </section>
+
+      {# ── Experience ── #}
+      <section class="editor-card" id="experience">
+        <div class="editor-head">
+          <div><h2>{{ ui.icon('briefcase', 16) }} الخبرة العملية</h2><p>أضف وظائفك السابقة والحالية بالترتيب.</p></div>
+        </div>
+        <div class="editor-body">
+          <div class="entry-list">
+            {% for item in profile.experiences %}
+              <div class="entry-item">
+                <div class="entry-item-head">
+                  <div>
+                    <h3>{{ item.title }}</h3>
+                    <div class="meta">{{ item.company_name }}{% if item.location %} · {{ item.location }}{% endif %} · {{ item.period_label }}</div>
+                    {% if item.description %}<p>{{ item.description|truncate(220) }}</p>{% endif %}
+                  </div>
+                  <div class="entry-actions">
+                    <details class="entry-edit">
+                      <summary>{{ ui.icon('edit', 13) }} تعديل</summary>
+                      <form method="post" action="{{ url_for('seeker.experience_update', row_id=item.id) }}" class="stack">
+                        {{ csrf() }}
+                        <div class="form-grid">
+                          <div class="field"><label for="exp-title-{{ item.id }}">المسمى</label>
+                            <input class="input" id="exp-title-{{ item.id }}" name="title" required value="{{ item.title }}"></div>
+                          <div class="field"><label for="exp-company-{{ item.id }}">الشركة</label>
+                            <input class="input" id="exp-company-{{ item.id }}" name="company_name" required value="{{ item.company_name }}"></div>
+                          <div class="field"><label for="exp-type-{{ item.id }}">نوع الدوام</label>
+                            <select class="select" id="exp-type-{{ item.id }}" name="employment_type">
+                              <option value="">غير محدد</option>
+                              {% for value, label in employment_types.items() %}
+                                <option value="{{ value }}" {{ 'selected' if item.employment_type == value }}>{{ label }}</option>
+                              {% endfor %}
+                            </select></div>
+                          <div class="field"><label for="exp-location-{{ item.id }}">المكان</label>
+                            <input class="input" id="exp-location-{{ item.id }}" name="location" value="{{ item.location or '' }}"></div>
+                          <div class="field"><label for="exp-start-{{ item.id }}">من</label>
+                            <input class="input" id="exp-start-{{ item.id }}" name="start_date" type="date" value="{{ item.start_date.isoformat() if item.start_date else '' }}"></div>
+                          <div class="field"><label for="exp-end-{{ item.id }}">إلى</label>
+                            <input class="input" id="exp-end-{{ item.id }}" name="end_date" type="date" value="{{ item.end_date.isoformat() if item.end_date else '' }}"></div>
+                        </div>
+                        <label class="check"><input type="checkbox" name="is_current" value="1" {{ 'checked' if item.is_current }}> ما زلت أعمل هنا</label>
+                        <div class="field"><label for="exp-desc-{{ item.id }}">الوصف</label>
+                          <textarea class="textarea" id="exp-desc-{{ item.id }}" name="description" rows="3" style="min-height:90px">{{ item.description or '' }}</textarea></div>
+                        <button class="btn btn-primary btn-sm" type="submit">حفظ التغييرات</button>
+                      </form>
+                    </details>
+                    <form method="post" action="{{ url_for('seeker.experience_delete', row_id=item.id) }}"
+                          onsubmit="return confirm('حذف سجل الخبرة هذا؟')">
+                      {{ csrf() }}
+                      <button class="btn btn-danger btn-sm" type="submit">{{ ui.icon('trash', 13) }}</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <p class="small muted">لم تضف خبرة عملية بعد.</p>
+            {% endfor %}
+          </div>
+
+          <details class="add-form">
+            <summary>{{ ui.icon('plus', 14) }} إضافة خبرة عملية</summary>
+            <form method="post" action="{{ url_for('seeker.experience_create') }}" class="stack" novalidate>
+              {{ csrf() }}
+              <div class="form-grid">
+                <div class="field"><label for="new-exp-title">المسمى الوظيفي</label>
+                  <input class="input" id="new-exp-title" name="title" required maxlength="180" placeholder="مثال: مطوّر Backend"></div>
+                <div class="field"><label for="new-exp-company">الشركة</label>
+                  <input class="input" id="new-exp-company" name="company_name" required maxlength="180"></div>
+                <div class="field"><label for="new-exp-type">نوع الدوام</label>
+                  <select class="select" id="new-exp-type" name="employment_type">
+                    <option value="">غير محدد</option>
+                    {% for value, label in employment_types.items() %}<option value="{{ value }}">{{ label }}</option>{% endfor %}
+                  </select></div>
+                <div class="field"><label for="new-exp-location">المكان</label>
+                  <input class="input" id="new-exp-location" name="location" maxlength="120"></div>
+                <div class="field"><label for="new-exp-start">من تاريخ</label>
+                  <input class="input" id="new-exp-start" name="start_date" type="date"></div>
+                <div class="field"><label for="new-exp-end">إلى تاريخ</label>
+                  <input class="input" id="new-exp-end" name="end_date" type="date"></div>
+              </div>
+              <label class="check"><input type="checkbox" name="is_current" value="1"> ما زلت أعمل هنا</label>
+              <div class="field"><label for="new-exp-desc">الوصف</label>
+                <textarea class="textarea" id="new-exp-desc" name="description" rows="3" style="min-height:90px"></textarea></div>
+              <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('plus', 14) }} إضافة</button>
+            </form>
+          </details>
+        </div>
+      </section>
+
+      {# ── Education ── #}
+      <section class="editor-card" id="education">
+        <div class="editor-head">
+          <div><h2>{{ ui.icon('graduation', 16) }} التعليم</h2><p>الشهادات الجامعية والدورات الأكاديمية.</p></div>
+        </div>
+        <div class="editor-body">
+          <div class="entry-list">
+            {% for item in profile.educations %}
+              <div class="entry-item">
+                <div class="entry-item-head">
+                  <div>
+                    <h3>{{ item.institution }}</h3>
+                    <div class="meta">{{ item.degree or '' }}{% if item.field_of_study %} · {{ item.field_of_study }}{% endif %} · {{ item.period_label }}</div>
+                    {% if item.description %}<p>{{ item.description|truncate(220) }}</p>{% endif %}
+                  </div>
+                  <div class="entry-actions">
+                    <details class="entry-edit">
+                      <summary>{{ ui.icon('edit', 13) }} تعديل</summary>
+                      <form method="post" action="{{ url_for('seeker.education_update', row_id=item.id) }}" class="stack">
+                        {{ csrf() }}
+                        <div class="form-grid">
+                          <div class="field"><label for="edu-inst-{{ item.id }}">الجامعة / المعهد</label>
+                            <input class="input" id="edu-inst-{{ item.id }}" name="institution" required value="{{ item.institution }}"></div>
+                          <div class="field"><label for="edu-degree-{{ item.id }}">الشهادة</label>
+                            <input class="input" id="edu-degree-{{ item.id }}" name="degree" value="{{ item.degree or '' }}"></div>
+                          <div class="field"><label for="edu-field-{{ item.id }}">التخصص</label>
+                            <input class="input" id="edu-field-{{ item.id }}" name="field_of_study" value="{{ item.field_of_study or '' }}"></div>
+                          <div class="field"><label for="edu-grade-{{ item.id }}">التقدير</label>
+                            <input class="input" id="edu-grade-{{ item.id }}" name="grade" value="{{ item.grade or '' }}"></div>
+                          <div class="field"><label for="edu-start-{{ item.id }}">سنة البداية</label>
+                            <input class="input" id="edu-start-{{ item.id }}" name="start_year" type="number" min="1950" max="2100" value="{{ item.start_year or '' }}"></div>
+                          <div class="field"><label for="edu-end-{{ item.id }}">سنة التخرج</label>
+                            <input class="input" id="edu-end-{{ item.id }}" name="end_year" type="number" min="1950" max="2100" value="{{ item.end_year or '' }}"></div>
+                        </div>
+                        <label class="check"><input type="checkbox" name="is_current" value="1" {{ 'checked' if item.is_current }}> ما زلت أدرس</label>
+                        <div class="field"><label for="edu-desc-{{ item.id }}">ملاحظات</label>
+                          <textarea class="textarea" id="edu-desc-{{ item.id }}" name="description" rows="2" style="min-height:80px">{{ item.description or '' }}</textarea></div>
+                        <button class="btn btn-primary btn-sm" type="submit">حفظ التغييرات</button>
+                      </form>
+                    </details>
+                    <form method="post" action="{{ url_for('seeker.education_delete', row_id=item.id) }}"
+                          onsubmit="return confirm('حذف هذا السجل التعليمي؟')">
+                      {{ csrf() }}
+                      <button class="btn btn-danger btn-sm" type="submit">{{ ui.icon('trash', 13) }}</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <p class="small muted">لم تضف سجلًا تعليميًا بعد.</p>
+            {% endfor %}
+          </div>
+
+          <details class="add-form">
+            <summary>{{ ui.icon('plus', 14) }} إضافة تعليم</summary>
+            <form method="post" action="{{ url_for('seeker.education_create') }}" class="stack" novalidate>
+              {{ csrf() }}
+              <div class="form-grid">
+                <div class="field"><label for="new-edu-inst">الجامعة / المعهد</label>
+                  <input class="input" id="new-edu-inst" name="institution" required maxlength="180"></div>
+                <div class="field"><label for="new-edu-degree">الشهادة</label>
+                  <input class="input" id="new-edu-degree" name="degree" maxlength="160" placeholder="بكالوريوس"></div>
+                <div class="field"><label for="new-edu-field">التخصص</label>
+                  <input class="input" id="new-edu-field" name="field_of_study" maxlength="160"></div>
+                <div class="field"><label for="new-edu-grade">التقدير</label>
+                  <input class="input" id="new-edu-grade" name="grade" maxlength="80"></div>
+                <div class="field"><label for="new-edu-start">سنة البداية</label>
+                  <input class="input" id="new-edu-start" name="start_year" type="number" min="1950" max="2100"></div>
+                <div class="field"><label for="new-edu-end">سنة التخرج</label>
+                  <input class="input" id="new-edu-end" name="end_year" type="number" min="1950" max="2100"></div>
+              </div>
+              <label class="check"><input type="checkbox" name="is_current" value="1"> ما زلت أدرس</label>
+              <div class="field"><label for="new-edu-desc">ملاحظات</label>
+                <textarea class="textarea" id="new-edu-desc" name="description" rows="2" style="min-height:80px"></textarea></div>
+              <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('plus', 14) }} إضافة</button>
+            </form>
+          </details>
+        </div>
+      </section>
+
+      {# ── Skills & languages ── #}
+      <section class="editor-card" id="skills">
+        <div class="editor-head">
+          <div><h2>{{ ui.icon('star', 16) }} المهارات واللغات</h2><p>المهارات تظهر في بحث أصحاب العمل وتوصيات الوظائف.</p></div>
+        </div>
+        <div class="editor-body">
+          <div>
+            <h3 class="small mb-2">المهارات</h3>
+            <div class="chip-list">
+              {% for item in profile.skills_list %}
+                <span class="skill-pill">
+                  {{ item.name }}
+                  <small style="opacity:.7">{{ skill_levels.get(item.level, item.level) }}</small>
+                  <form method="post" action="{{ url_for('seeker.skill_delete', row_id=item.id) }}">
+                    {{ csrf() }}
+                    <button type="submit" aria-label="حذف {{ item.name }}">{{ ui.icon('close', 11) }}</button>
+                  </form>
+                </span>
+              {% else %}
+                <span class="xs muted">لم تضف مهارات بعد.</span>
+              {% endfor %}
+            </div>
+          </div>
+          <form method="post" action="{{ url_for('seeker.skill_create') }}" class="row" style="align-items:flex-end;gap:8px">
+            {{ csrf() }}
+            <div class="field grow" style="min-width:160px"><label for="skill-name">مهارة جديدة</label>
+              <input class="input" id="skill-name" name="name" required maxlength="100" placeholder="مثال: Python"></div>
+            <div class="field" style="min-width:130px"><label for="skill-level">المستوى</label>
+              <select class="select" id="skill-level" name="level">
+                {% for value, label in skill_levels.items() %}<option value="{{ value }}" {{ 'selected' if value == 'intermediate' }}>{{ label }}</option>{% endfor %}
+              </select></div>
+            <div class="field" style="width:100px"><label for="skill-years">سنوات</label>
+              <input class="input" id="skill-years" name="years" type="number" min="0" max="60"></div>
+            <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('plus', 14) }} إضافة</button>
+          </form>
+
+          <hr class="rule">
+
+          <div>
+            <h3 class="small mb-2">اللغات</h3>
+            <div class="chip-list">
+              {% for item in profile.languages_list %}
+                <span class="skill-pill">
+                  {{ item.name }}
+                  <small style="opacity:.7">{{ language_levels.get(item.proficiency, item.proficiency) }}</small>
+                  <form method="post" action="{{ url_for('seeker.language_delete', row_id=item.id) }}">
+                    {{ csrf() }}
+                    <button type="submit" aria-label="حذف {{ item.name }}">{{ ui.icon('close', 11) }}</button>
+                  </form>
+                </span>
+              {% else %}
+                <span class="xs muted">لم تضف لغات بعد.</span>
+              {% endfor %}
+            </div>
+          </div>
+          <form method="post" action="{{ url_for('seeker.language_create') }}" class="row" style="align-items:flex-end;gap:8px">
+            {{ csrf() }}
+            <div class="field grow" style="min-width:160px"><label for="language-name">لغة جديدة</label>
+              <input class="input" id="language-name" name="name" required maxlength="80" placeholder="مثال: الإنجليزية"></div>
+            <div class="field" style="min-width:150px"><label for="language-level">المستوى</label>
+              <select class="select" id="language-level" name="proficiency">
+                {% for value, label in language_levels.items() %}<option value="{{ value }}" {{ 'selected' if value == 'professional' }}>{{ label }}</option>{% endfor %}
+              </select></div>
+            <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('plus', 14) }} إضافة</button>
+          </form>
+        </div>
+      </section>
+
+      {# ── Certifications ── #}
+      <section class="editor-card" id="certifications">
+        <div class="editor-head">
+          <div><h2>{{ ui.icon('award', 16) }} الشهادات والإنجازات</h2><p>شهادات مهنية، دورات، واعتمادات رسمية.</p></div>
+        </div>
+        <div class="editor-body">
+          <div class="entry-list">
+            {% for item in profile.certifications %}
+              <div class="entry-item">
+                <div class="entry-item-head">
+                  <div>
+                    <h3>{{ item.name }}</h3>
+                    <div class="meta">{{ item.issuer or '' }}{% if item.issue_date %} · {{ item.issue_date|date_ar }}{% endif %}</div>
+                    {% if item.credential_url %}<a class="xs" href="{{ item.credential_url }}" target="_blank" rel="noopener nofollow">عرض الشهادة</a>{% endif %}
+                  </div>
+                  <div class="entry-actions">
+                    <details class="entry-edit">
+                      <summary>{{ ui.icon('edit', 13) }} تعديل</summary>
+                      <form method="post" action="{{ url_for('seeker.certification_update', row_id=item.id) }}" class="stack">
+                        {{ csrf() }}
+                        <div class="form-grid">
+                          <div class="field"><label for="cert-name-{{ item.id }}">اسم الشهادة</label>
+                            <input class="input" id="cert-name-{{ item.id }}" name="name" required value="{{ item.name }}"></div>
+                          <div class="field"><label for="cert-issuer-{{ item.id }}">الجهة المانحة</label>
+                            <input class="input" id="cert-issuer-{{ item.id }}" name="issuer" value="{{ item.issuer or '' }}"></div>
+                          <div class="field"><label for="cert-issue-{{ item.id }}">تاريخ الإصدار</label>
+                            <input class="input" id="cert-issue-{{ item.id }}" name="issue_date" type="date" value="{{ item.issue_date.isoformat() if item.issue_date else '' }}"></div>
+                          <div class="field"><label for="cert-expiry-{{ item.id }}">تاريخ الانتهاء</label>
+                            <input class="input" id="cert-expiry-{{ item.id }}" name="expiry_date" type="date" value="{{ item.expiry_date.isoformat() if item.expiry_date else '' }}"></div>
+                          <div class="field"><label for="cert-cred-{{ item.id }}">رقم الاعتماد</label>
+                            <input class="input" id="cert-cred-{{ item.id }}" name="credential_id" value="{{ item.credential_id or '' }}"></div>
+                          <div class="field"><label for="cert-url-{{ item.id }}">رابط الشهادة</label>
+                            <input class="input" id="cert-url-{{ item.id }}" name="credential_url" type="url" dir="ltr" value="{{ item.credential_url or '' }}"></div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" type="submit">حفظ التغييرات</button>
+                      </form>
+                    </details>
+                    <form method="post" action="{{ url_for('seeker.certification_delete', row_id=item.id) }}"
+                          onsubmit="return confirm('حذف هذه الشهادة؟')">
+                      {{ csrf() }}
+                      <button class="btn btn-danger btn-sm" type="submit">{{ ui.icon('trash', 13) }}</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <p class="small muted">لم تضف شهادات بعد.</p>
+            {% endfor %}
+          </div>
+
+          <details class="add-form">
+            <summary>{{ ui.icon('plus', 14) }} إضافة شهادة</summary>
+            <form method="post" action="{{ url_for('seeker.certification_create') }}" class="stack" novalidate>
+              {{ csrf() }}
+              <div class="form-grid">
+                <div class="field"><label for="new-cert-name">اسم الشهادة</label>
+                  <input class="input" id="new-cert-name" name="name" required maxlength="180"></div>
+                <div class="field"><label for="new-cert-issuer">الجهة المانحة</label>
+                  <input class="input" id="new-cert-issuer" name="issuer" maxlength="180"></div>
+                <div class="field"><label for="new-cert-issue">تاريخ الإصدار</label>
+                  <input class="input" id="new-cert-issue" name="issue_date" type="date"></div>
+                <div class="field"><label for="new-cert-expiry">تاريخ الانتهاء</label>
+                  <input class="input" id="new-cert-expiry" name="expiry_date" type="date"></div>
+                <div class="field"><label for="new-cert-cred">رقم الاعتماد</label>
+                  <input class="input" id="new-cert-cred" name="credential_id" maxlength="160"></div>
+                <div class="field"><label for="new-cert-url">رابط الشهادة</label>
+                  <input class="input" id="new-cert-url" name="credential_url" type="url" dir="ltr" maxlength="512"></div>
+              </div>
+              <div class="field"><label for="new-cert-desc">وصف</label>
+                <textarea class="textarea" id="new-cert-desc" name="description" rows="2" style="min-height:80px"></textarea></div>
+              <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('plus', 14) }} إضافة</button>
+            </form>
+          </details>
+        </div>
+      </section>
+
+      {# ── Projects ── #}
+      <section class="editor-card" id="projects">
+        <div class="editor-head">
+          <div><h2>{{ ui.icon('folder', 16) }} المشاريع والأعمال</h2><p>أعمالك، مشاريعك مفتوحة المصدر، ودراسات الحالة.</p></div>
+        </div>
+        <div class="editor-body">
+          <div class="entry-list">
+            {% for item in profile.projects %}
+              <div class="entry-item">
+                <div class="entry-item-head">
+                  <div>
+                    <h3>{{ item.title }}</h3>
+                    <div class="meta">
+                      {% if item.start_date %}{{ item.start_date|date_ar }}{% endif %}
+                      {% if item.end_date %} – {{ item.end_date|date_ar }}{% endif %}
+                      {% if item.technologies %} · {{ item.technologies|join('، ') }}{% endif %}
+                    </div>
+                    {% if item.description %}<p>{{ item.description|truncate(240) }}</p>{% endif %}
+                    <div class="row mt-2" style="gap:12px">
+                      {% if item.project_url %}<a class="xs" href="{{ item.project_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('external', 12) }} المشروع</a>{% endif %}
+                      {% if item.repo_url %}<a class="xs" href="{{ item.repo_url }}" target="_blank" rel="noopener nofollow">{{ ui.icon('github', 12) }} الكود</a>{% endif %}
+                    </div>
+                  </div>
+                  <div class="entry-actions">
+                    <details class="entry-edit">
+                      <summary>{{ ui.icon('edit', 13) }} تعديل</summary>
+                      <form method="post" action="{{ url_for('seeker.project_update', row_id=item.id) }}" class="stack">
+                        {{ csrf() }}
+                        <div class="field"><label for="proj-title-{{ item.id }}">اسم المشروع</label>
+                          <input class="input" id="proj-title-{{ item.id }}" name="title" required value="{{ item.title }}"></div>
+                        <div class="field"><label for="proj-desc-{{ item.id }}">الوصف</label>
+                          <textarea class="textarea" id="proj-desc-{{ item.id }}" name="description" rows="3" style="min-height:90px">{{ item.description or '' }}</textarea></div>
+                        <div class="form-grid">
+                          <div class="field"><label for="proj-url-{{ item.id }}">رابط المشروع</label>
+                            <input class="input" id="proj-url-{{ item.id }}" name="project_url" type="url" dir="ltr" value="{{ item.project_url or '' }}"></div>
+                          <div class="field"><label for="proj-repo-{{ item.id }}">رابط الكود</label>
+                            <input class="input" id="proj-repo-{{ item.id }}" name="repo_url" type="url" dir="ltr" value="{{ item.repo_url or '' }}"></div>
+                          <div class="field"><label for="proj-tech-{{ item.id }}">التقنيات (بفواصل)</label>
+                            <input class="input" id="proj-tech-{{ item.id }}" name="technologies" value="{{ (item.technologies or [])|join(', ') }}"></div>
+                          <div class="field"><label for="proj-image-{{ item.id }}">رابط صورة</label>
+                            <input class="input" id="proj-image-{{ item.id }}" name="image_url" type="url" dir="ltr" value="{{ item.image_url or '' }}"></div>
+                          <div class="field"><label for="proj-start-{{ item.id }}">من</label>
+                            <input class="input" id="proj-start-{{ item.id }}" name="start_date" type="date" value="{{ item.start_date.isoformat() if item.start_date else '' }}"></div>
+                          <div class="field"><label for="proj-end-{{ item.id }}">إلى</label>
+                            <input class="input" id="proj-end-{{ item.id }}" name="end_date" type="date" value="{{ item.end_date.isoformat() if item.end_date else '' }}"></div>
+                        </div>
+                        <button class="btn btn-primary btn-sm" type="submit">حفظ التغييرات</button>
+                      </form>
+                    </details>
+                    <form method="post" action="{{ url_for('seeker.project_delete', row_id=item.id) }}"
+                          onsubmit="return confirm('حذف هذا المشروع؟')">
+                      {{ csrf() }}
+                      <button class="btn btn-danger btn-sm" type="submit">{{ ui.icon('trash', 13) }}</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            {% else %}
+              <p class="small muted">لم تضف مشاريع بعد.</p>
+            {% endfor %}
+          </div>
+
+          <details class="add-form">
+            <summary>{{ ui.icon('plus', 14) }} إضافة مشروع</summary>
+            <form method="post" action="{{ url_for('seeker.project_create') }}" class="stack" novalidate>
+              {{ csrf() }}
+              <div class="field"><label for="new-proj-title">اسم المشروع</label>
+                <input class="input" id="new-proj-title" name="title" required maxlength="180"></div>
+              <div class="field"><label for="new-proj-desc">الوصف</label>
+                <textarea class="textarea" id="new-proj-desc" name="description" rows="3" style="min-height:90px"></textarea></div>
+              <div class="form-grid">
+                <div class="field"><label for="new-proj-url">رابط المشروع</label>
+                  <input class="input" id="new-proj-url" name="project_url" type="url" dir="ltr" maxlength="512"></div>
+                <div class="field"><label for="new-proj-repo">رابط الكود</label>
+                  <input class="input" id="new-proj-repo" name="repo_url" type="url" dir="ltr" maxlength="512"></div>
+                <div class="field"><label for="new-proj-tech">التقنيات (بفواصل)</label>
+                  <input class="input" id="new-proj-tech" name="technologies" maxlength="400" placeholder="Python, Flask, PostgreSQL"></div>
+                <div class="field"><label for="new-proj-image">رابط صورة</label>
+                  <input class="input" id="new-proj-image" name="image_url" type="url" dir="ltr" maxlength="512"></div>
+                <div class="field"><label for="new-proj-start">من</label>
+                  <input class="input" id="new-proj-start" name="start_date" type="date"></div>
+                <div class="field"><label for="new-proj-end">إلى</label>
+                  <input class="input" id="new-proj-end" name="end_date" type="date"></div>
+              </div>
+              <button class="btn btn-primary btn-sm" type="submit">{{ ui.icon('plus', 14) }} إضافة</button>
+            </form>
+          </details>
+        </div>
+      </section>
+
+      {# ── Privacy + CV ── #}
+      <section class="editor-card" id="privacy">
+        <div class="editor-head">
+          <div><h2>{{ ui.icon('lock', 16) }} الخصوصية والسيرة الذاتية</h2><p>أنت تتحكم بما يظهر للزوار وأصحاب العمل.</p></div>
+        </div>
+        <div class="editor-body">
+          <div class="upload-row" style="align-items:flex-start">
+            <div class="empty-icon" style="width:52px;height:52px">{{ ui.icon('file', 22) }}</div>
+            <div class="grow">
+              <strong class="small">السيرة الذاتية المرفوعة</strong>
+              {% if profile.cv_path %}
+                <p class="xs muted">الملف الحالي: {{ profile.cv_filename or 'CV' }}
+                  {% if profile.cv_uploaded_at %} · رُفع {{ profile.cv_uploaded_at|relative_time }}{% endif %}
+                </p>
+                <a class="btn btn-soft btn-sm mt-2" href="{{ url_for('profiles.cv', user_id=current_user.id) }}">{{ ui.icon('download', 14) }} تنزيل ملفي</a>
+              {% elif profile.cv_url %}
+                <p class="xs muted">لديك رابط سيرة ذاتية خارجي محفوظ في البيانات الأساسية.</p>
+              {% else %}
+                <p class="xs muted">لم ترفع سيرة ذاتية بعد. PDF أو DOC أو DOCX حتى 5 ميغابايت.</p>
+              {% endif %}
+              <form method="post" action="{{ url_for('seeker.profile_cv') }}" enctype="multipart/form-data" class="upload-actions mt-2">
+                {{ csrf() }}
+                <label class="visually-hidden" for="cv-file">اختر ملف السيرة الذاتية</label>
+                <input id="cv-file" type="file" name="cv" accept=".pdf,.doc,.docx" required>
+                <button class="btn btn-soft btn-sm" type="submit">{{ ui.icon('upload', 14) }} رفع السيرة</button>
+              </form>
+              {% if profile.cv_path %}
+                <form method="post" action="{{ url_for('seeker.profile_cv_remove') }}" class="mt-2">
+                  {{ csrf() }}
+                  <button class="btn btn-danger btn-sm" type="submit">{{ ui.icon('trash', 14) }} حذف الملف المرفوع</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+
+          <form method="post" action="{{ url_for('seeker.profile_privacy') }}" class="stack">
+            {{ csrf() }}
+            <div class="field">
+              <label for="profile_visibility">من يمكنه عرض ملفي؟</label>
+              <select class="select" id="profile_visibility" name="profile_visibility">
+                {% for value, label in visibilities.items() %}
+                  <option value="{{ value }}" {{ 'selected' if privacy.profile_visibility == value }}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-grid">
+              {% for name, label in [
+                ('show_email', 'إظهار البريد الإلكتروني'),
+                ('show_phone', 'إظهار رقم الهاتف'),
+                ('show_location', 'إظهار الموقع'),
+                ('show_education', 'إظهار التعليم'),
+                ('show_experience', 'إظهار الخبرة'),
+                ('show_skills', 'إظهار المهارات'),
+                ('show_languages', 'إظهار اللغات'),
+                ('show_certifications', 'إظهار الشهادات'),
+                ('show_projects', 'إظهار المشاريع'),
+                ('show_cv', 'السماح بتنزيل السيرة الذاتية'),
+                ('allow_messages', 'السماح باستقبال الرسائل'),
+                ('show_activity', 'إظهار النشاط')
+              ] %}
+                <label class="check">
+                  <input type="checkbox" name="{{ name }}" value="1" {{ 'checked' if privacy[name] }}>
+                  {{ label }}
+                </label>
+              {% endfor %}
+            </div>
+            <div><button class="btn btn-primary" type="submit">{{ ui.icon('check', 15) }} حفظ إعدادات الخصوصية</button></div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

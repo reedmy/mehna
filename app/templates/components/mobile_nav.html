@@ -1,0 +1,36 @@
+{% import "components/icons.html" as ui %}
+<nav class="mobile-nav" aria-label="التنقل السريع">
+  <ul>
+    <li>
+      <a href="{{ url_for('public.home') }}" class="{{ 'is-active' if request.endpoint == 'public.home' }}">
+        {{ ui.icon('home', 20) }}<span>الرئيسية</span>
+      </a>
+    </li>
+    <li>
+      <a href="{{ url_for('public.jobs') }}" class="{{ 'is-active' if request.endpoint in ('public.jobs', 'public.job_detail') }}">
+        {{ ui.icon('briefcase', 20) }}<span>الوظائف</span>
+      </a>
+    </li>
+    <li>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('messages.inbox') }}" class="{{ 'is-active' if request.endpoint == 'messages.inbox' }}">
+          {{ ui.icon('message', 20) }}<span>الرسائل</span>
+          {% if unread_messages %}<span class="nav-badge" style="inset-block-start:2px;inset-inline-end:calc(50% - 22px)">{{ unread_messages }}</span>{% endif %}
+        </a>
+      {% else %}
+        <a href="{{ url_for('public.companies') }}" class="{{ 'is-active' if request.endpoint in ('public.companies', 'public.company_detail') }}">
+          {{ ui.icon('building', 20) }}<span>الشركات</span>
+        </a>
+      {% endif %}
+    </li>
+    <li>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('profiles.public_profile', user_id=current_user.id) }}" class="{{ 'is-active' if request.endpoint == 'profiles.public_profile' }}">
+          {{ ui.icon('user', 20) }}<span>ملفي</span>
+        </a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">{{ ui.icon('user', 20) }}<span>دخول</span></a>
+      {% endif %}
+    </li>
+  </ul>
+</nav>

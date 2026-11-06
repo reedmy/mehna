@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: mehna
+      POSTGRES_PASSWORD: mehna-dev-password
+      POSTGRES_DB: mehna
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mehna -d mehna"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      DATABASE_URL: postgresql+psycopg2://mehna:mehna-dev-password@db:5432/mehna
+      SESSION_COOKIE_SECURE: "false"
+      SITE_URL: http://localhost:8000
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      WEB_CONCURRENCY: "3"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+volumes:
+  pgdata:

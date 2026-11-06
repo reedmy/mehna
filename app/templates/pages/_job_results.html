@@ -1,0 +1,12 @@
+{% from "components/job_card.html" import job_card %}
+
+{% if pagination.items %}
+  <div class="job-grid">
+    {% for job in pagination.items %}{{ job_card(job, show_apply=true) }}{% endfor %}
+  </div>
+  {% include "components/pagination.html" %}
+{% else %}
+  {% with title='لا توجد وظائف مطابقة', body='جرّب كلمة أعم أو أزل بعض الفلاتر — أو فعّل تنبيهًا ليصلك الجديد.', icon='search' %}
+    {% include "components/empty_state.html" %}
+  {% endwith %}
+{% endif %}

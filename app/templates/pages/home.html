@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}{{ site_name }} — وظائف العراق{% endblock %}
+{% block body_class %}home-page{% endblock %}
+
+{% macro job_row(job) -%}
+<article class="job-row">
+  <div class="logo">
+    {% if job.company.logo_url %}
+      <img src="{{ job.company.logo_url }}" alt="{{ job.company.name }}" loading="lazy">
+    {% else %}
+      {{ job.company.initials }}
+    {% endif %}
+  </div>
+  <div class="grow">
+    <h3><a href="{{ url_for('public.job_detail', job_id=job.id, slug=job.slug) }}">{{ job.title }}</a></h3>
+    <div class="meta">
+      <span>{{ job.company.name }}</span>
+      {% if job.city %}<span aria-hidden="true">·</span><span>{{ job.city }}</span>{% endif %}
+      <span class="badge">{{ job.job_type|job_type_label }}</span>
+      {% if job.company.is_verified %}<span class="badge badge-success">{{ ui.icon('shield', 10) }} موثّقة</span>{% endif %}
+    </div>
+    <div class="job-row-foot">
+      <span class="row" style="gap:6px">{{ ui.icon('clock', 12) }} {{ job.published_at|relative_time }}</span>
+      <span class="strong" style="color:var(--brand-700)" dir="auto">{{ job.salary_label }}</span>
+    </div>
+  </div>
+  <div class="row" style="gap:6px;align-items:flex-start">
+    <button class="save-btn {{ 'is-saved' if job.id in saved_ids }}" title="حفظ"
+            hx-post="{{ url_for('api.toggle_save', job_id=job.id) }}" hx-swap="outerHTML"
+            aria-label="{{ 'إزالة من المحفوظة' if job.id in saved_ids else 'حفظ الوظيفة' }}">
+      {{ ui.icon('bookmark', 15) }}
+    </button>
+  </div>
+</article>
+{%- endmacro %}
+
+{% block content %}
+<div class="feed-shell">
+  <div class="feed-layout">
+
+    {# ── Right rail (first in RTL): identity / profile ── #}
+    <aside class="rail rail-left" aria-label="ملفي">
+      {% if current_user.is_authenticated and profile %}
+        <div class="rail-card">
+          <div class="rail-cover"></div>
+          <div class="rail-identity">
+            <div class="rail-avatar">
+              {% if current_user.display_avatar %}
+                <img src="{{ current_user.display_avatar }}" alt="" referrerpolicy="no-referrer">
+              {% else %}
+                {{ current_user.full_name|initials }}
+              {% endif %}
+            </div>
+            <div class="rail-name">{{ current_user.full_name }}</div>
+            <div class="rail-headline">{{ profile.headline or 'أضف مسمّاك المهني' }}</div>
+            <div class="rail-location">{{ ui.icon('pin', 11) }} {{ profile.city or 'العراق' }}</div>
+
+            <div class="rail-stats">
+              <div class="rail-stat"><strong>{{ applications_count }}</strong><span>طلب مقدَّم</span></div>
+              <div class="rail-stat"><strong>{{ saved_ids|length }}</strong><span>وظيفة محفوظة</span></div>
+            </div>
+
+            <div class="rail-progress">
+              <div class="split">
+                <span class="muted">اكتمال الملف</span>
+                <strong>{{ profile.completeness }}%</strong>
+              </div>
+              <div class="progress"><span style="width:{{ profile.completeness }}%"></span></div>
+            </div>
+          </div>
+          <div class="rail-links">
+            <a class="rail-link" href="{{ url_for('seeker.profile') }}">{{ ui.icon('edit', 15) }} تعديل الملف المهني</a>
+            <a class="rail-link" href="{{ url_for('seeker.saved') }}">{{ ui.icon('bookmark', 15) }} الوظائف المحفوظة</a>
+            {% if not current_user.is_admin %}
+              <a class="rail-link" href="{{ url_for('seeker.applications' if current_user.role == 'seeker' else 'employer.applicants') }}">
+                {{ ui.icon('file', 15) }} {{ 'طلباتي' if current_user.role == 'seeker' else 'المتقدمون' }}
+              </a>
+            {% endif %}
+            <a class="rail-link" href="{{ url_for('profiles.public_profile', user_id=current_user.id) }}">{{ ui.icon('eye', 15) }} عرض ملفي العام</a>
+          </div>
+        </div>
+
+        <div class="rail-card">
+          <div class="rail-card-head">
+            <h2>{{ ui.icon('sparkle', 14) }} اقتراحات لك</h2>
+          </div>
+          <div class="rail-list">
+            {% for industry, count in popular_industries[:4] %}
+              <a class="rail-list-item" href="{{ url_for('public.jobs', industry=industry) }}">
+                <span class="logo" style="width:30px;height:30px;border-radius:8px;font-size:11px">{{ ui.icon('chart', 14) }}</span>
+                <span class="grow"><strong>{{ industry }}</strong><small>{{ count }} وظيفة منشورة</small></span>
+              </a>
+            {% else %}
+              <p class="rail-tag muted">ستظهر الاقتراحات بعد نشر المزيد من الوظائف.</p>
+            {% endfor %}
+          </div>
+          <a class="rail-foot" href="{{ url_for('public.jobs') }}">تصفّح كل الوظائف</a>
+        </div>
+      {% else %}
+        <div class="rail-card">
+          <div class="rail-cover"></div>
+          <div class="rail-card-body" style="margin-block-start:-26px">
+            <div class="rail-avatar" style="margin-inline:0">{{ ui.icon('user', 26) }}</div>
+            <h2 class="mt-4">مرحبًا بك في {{ site_name }}</h2>
+            <p class="xs muted mt-2">أنشئ ملفك المهني، احفظ الوظائف، وتابع طلباتك في مكان واحد.</p>
+            <div class="stack mt-4" style="display:grid;gap:8px">
+              <a class="btn btn-primary btn-sm btn-block" href="{{ url_for('auth.register', role='seeker') }}">أنشئ حساب باحث</a>
+              <a class="btn btn-ghost btn-sm btn-block" href="{{ url_for('auth.register', role='employer') }}">سجّل شركتك</a>
+            </div>
+          </div>
+          <div class="rail-links">
+            <a class="rail-link" href="{{ url_for('public.jobs') }}">{{ ui.icon('briefcase', 15) }} تصفّح الوظائف</a>
+            <a class="rail-link" href="{{ url_for('public.companies') }}">{{ ui.icon('building', 15) }} الشركات الموثّقة</a>
+            <a class="rail-link" href="{{ url_for('public.how_it_works') }}">{{ ui.icon('info', 15) }} كيف تعمل مهنة</a>
+          </div>
+        </div>
+      {% endif %}
+
+      <p class="xs muted" style="padding-inline:8px">
+        {{ ui.icon('shield', 11) }} منصة عراقية لا تطلب رسومًا من الباحثين عن عمل.
+      </p>
+    </aside>
+
+    {# ── Main feed ── #}
+    <section class="feed" aria-label="آخر الوظائف">
+
+      {% if not current_user.is_authenticated %}
+        <div class="home-guest-hero">
+          <div>
+            <span class="badge" style="background:rgba(255,255,255,.14);color:#fff">وظائف موثّقة في كل العراق</span>
+            <h1 class="mt-4">وظيفتك القادمة تبدأ من هنا</h1>
+            <p>ابحث بين {{ stats.jobs }} وظيفة منشورة، وقدّم مباشرة إلى أصحاب العمل — بدون رسوم.</p>
+            <form class="feed-search mt-4" action="{{ url_for('public.jobs') }}" method="get" role="search">
+              <label class="visually-hidden" for="home-q">ابحث عن وظيفة</label>
+              <input class="input" id="home-q" name="q" type="search" placeholder="المسمى الوظيفي أو الشركة…">
+              <select class="select" name="city" aria-label="المدينة">
+                <option value="">كل المدن</option>
+                {% for city, count in cities %}<option value="{{ city }}">{{ city }}</option>{% endfor %}
+              </select>
+              <button class="btn btn-primary" type="submit">{{ ui.icon('search', 16) }} بحث</button>
+            </form>
+          </div>
+          <div class="home-guest-art" aria-hidden="true">
+            <img src="{{ url_for('static', filename='img/hero-network.svg') }}" alt="" width="420" height="300" loading="lazy">
+          </div>
+        </div>
+      {% else %}
+        <div class="feed-card">
+          <div class="row" style="gap:12px;align-items:flex-start">
+            <span class="avatar" style="width:48px;height:48px">
+              {% if current_user.display_avatar %}
+                <img src="{{ current_user.display_avatar }}" alt="" referrerpolicy="no-referrer">
+              {% else %}{{ current_user.full_name|initials }}{% endif %}
+            </span>
+            <div class="grow">
+              <h2 style="font-size:var(--fs-md)">ابحث عن فرصتك التالية{{ '، ' ~ current_user.first_name }}</h2>
+              <p>وصول مباشر إلى {{ stats.jobs }} وظيفة منشورة من شركات عراقية موثّقة.</p>
+            </div>
+          </div>
+          <form class="feed-search" action="{{ url_for('public.jobs') }}" method="get" role="search">
+            <label class="visually-hidden" for="feed-q">ابحث عن وظيفة</label>
+            <input class="input" id="feed-q" name="q" type="search" placeholder="ابحث بالمسمى أو الشركة أو المهارة…">
+            <select class="select" name="city" aria-label="المدينة">
+              <option value="">كل المدن</option>
+              {% for city, count in cities %}<option value="{{ city }}" {{ 'selected' if profile and profile.city == city }}>{{ city }}</option>{% endfor %}
+            </select>
+            <button class="btn btn-primary" type="submit">{{ ui.icon('search', 16) }} بحث</button>
+          </form>
+        </div>
+      {% endif %}
+
+      <div class="feed-card" style="padding:0;overflow:hidden">
+        <div class="feed-section-head">
+          <div>
+            <h2>{{ 'وظائف تناسب مدينتك' if profile and profile.city else 'أحدث الوظائف' }}</h2>
+            <p class="xs muted">{{ 'فرص جديدة في ' ~ profile.city ~ ' ومدن أخرى' if profile and profile.city else 'فرص جديدة من شركات عراقية موثّقة' }}</p>
+          </div>
+          <a href="{{ url_for('public.jobs') }}">كل الوظائف {{ ui.icon('arrow-left', 13) }}</a>
+        </div>
+        {% if jobs %}
+          {% for job in jobs %}{{ job_row(job) }}{% endfor %}
+        {% else %}
+          <div class="panel-body">
+            {% with title='لا توجد وظائف بعد', body='كن أول من ينشر وظيفة على مهنة.', icon='briefcase' %}
+              {% include "components/empty_state.html" %}
+            {% endwith %}
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="feed-card">
+        <div class="feed-card-head">
+          <div>
+            <h2>{{ ui.icon('building', 16) }} شركات موثّقة</h2>
+            <p>تعامل مع أصحاب عمل تحققنا من سجلاتهم.</p>
+          </div>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('public.companies') }}">كل الشركات</a>
+        </div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px">
+          {% for company, count in recommended_companies %}
+            <a class="company-row" href="{{ url_for('public.company_detail', slug=company.slug) }}">
+              <span class="logo">
+                {% if company.logo_url %}<img src="{{ company.logo_url }}" alt="{{ company.name }}" loading="lazy">{% else %}{{ company.initials }}{% endif %}
+              </span>
+              <span class="grow">
+                <strong>{{ company.name }}</strong>
+                <small>{{ count }} وظيفة · {{ company.city or 'العراق' }}</small>
+              </span>
+              {% if company.is_verified %}<span class="badge badge-success">{{ ui.icon('shield', 10) }}</span>{% endif %}
+            </a>
+          {% else %}
+            <p class="small muted">ستظهر الشركات الموثّقة هنا عند نشر وظائفها.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    {# ── Left rail (last in RTL): discovery ── #}
+    <aside class="rail rail-right" aria-label="استكشاف">
+      <div class="rail-card">
+        <div class="rail-card-head">
+          <h2>{{ ui.icon('chart', 14) }} الأكثر طلبًا</h2>
+          <a class="xs" href="{{ url_for('public.jobs') }}">الكل</a>
+        </div>
+        <div>
+          {% for industry, count in popular_industries %}
+            <a class="rail-tag" href="{{ url_for('public.jobs', industry=industry) }}">
+              <span>{{ industry }}</span><span>{{ count }}</span>
+            </a>
+          {% else %}
+            <p class="rail-tag muted">لا توجد بيانات قطاعات بعد.</p>
+          {% endfor %}
+        </div>
+        <a class="rail-foot" href="{{ url_for('public.jobs') }}">استكشف الوظائف</a>
+      </div>
+
+      <div class="rail-card">
+        <div class="rail-card-head">
+          <h2>{{ ui.icon('pin', 14) }} مدن فيها فرص</h2>
+        </div>
+        <div>
+          {% for city, count in cities %}
+            <a class="rail-tag" href="{{ url_for('public.jobs', city=city) }}"><span>{{ city }}</span><span>{{ count }}</span></a>
+          {% else %}
+            <p class="rail-tag muted">لا توجد وظائف مرتبطة بمدن بعد.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="rail-card">
+        <div class="rail-card-head"><h2>مهنة بالأرقام</h2></div>
+        <div class="rail-card-body">
+          <div class="rail-stats" style="margin-block-start:0;grid-template-columns:1fr 1fr">
+            <div class="rail-stat"><strong>{{ stats.jobs }}</strong><span>وظيفة منشورة</span></div>
+            <div class="rail-stat"><strong>{{ stats.companies }}</strong><span>شركة</span></div>
+            <div class="rail-stat"><strong>{{ stats.seekers }}</strong><span>باحث</span></div>
+            <div class="rail-stat"><strong>{{ stats.applications }}</strong><span>طلب</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rail-card">
+        <div class="rail-card-body">
+          <h2>{{ ui.icon('users', 14) }} هل أنت صاحب عمل؟</h2>
+          <p class="xs muted mt-2">انشر وظيفتك واستقبل الطلبات في مكان واحد.</p>
+          <a class="btn btn-primary btn-sm btn-block mt-4" href="{{ url_for('auth.register', role='employer') }}">سجّل شركتك</a>
+        </div>
+      </div>
+
+      <p class="xs muted" style="padding-inline:8px;line-height:1.8">
+        © 2026 {{ site_name }} · <a href="{{ url_for('public.about') }}">من نحن</a> ·
+        <a href="{{ url_for('public.how_it_works') }}">كيف تعمل</a> ·
+        <a href="{{ url_for('public.pricing') }}">الأسعار</a>
+      </p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

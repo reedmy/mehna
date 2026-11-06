@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}الرسائل — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="messages-shell">
+  <div class="split mb-4">
+    <div>
+      <h1 style="font-size:var(--fs-xl)">الرسائل</h1>
+      <p class="muted small">تواصل مباشرة مع أصحاب العمل والباحثين عن عمل.</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for('public.jobs') }}">{{ ui.icon('briefcase', 14) }} تصفّح الوظائف</a>
+  </div>
+
+  {% if threads %}
+    <div class="messages-layout">
+      <aside class="thread-pane" aria-label="قائمة المحادثات">
+        <div class="thread-pane-head">
+          <h1>{{ threads|length }} محادثة</h1>
+          <span class="badge">{{ unread_messages }} غير مقروءة</span>
+        </div>
+        <div class="thread-list">
+          {% for item in threads %}
+            {% set other = item.other_user(current_user.id) %}
+            {% set last = last_message(item) %}
+            {% set unread = unread_in_thread(current_user, item) %}
+            <a class="thread-item {{ 'is-active' if active and active.id == item.id }}"
+               href="{{ url_for('messages.inbox', thread=item.id) }}">
+              <span class="avatar">
+                {% if other.display_avatar %}
+                  <img src="{{ other.display_avatar }}" alt="" referrerpolicy="no-referrer">
+                {% else %}{{ other.full_name|initials }}{% endif %}
+              </span>
+              <span class="grow">
+                <strong>{{ other.full_name }}</strong>
+                <small>{{ (last.body|truncate(46)) if last else 'ابدأ المحادثة' }}</small>
+                <small>{{ (last.created_at|relative_time) if last else '' }}</small>
+              </span>
+              {% if unread %}<span class="unread">{{ unread }}</span>{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </aside>
+
+      <section class="chat-pane" aria-label="المحادثة">
+        {% if active %}
+          {% set other = active.other_user(current_user.id) %}
+          <header class="chat-head">
+            <span class="avatar">
+              {% if other.display_avatar %}
+                <img src="{{ other.display_avatar }}" alt="" referrerpolicy="no-referrer">
+              {% else %}{{ other.full_name|initials }}{% endif %}
+            </span>
+            <div class="grow">
+              <strong>{{ other.full_name }}</strong>
+              <small>{{ other.profile.headline if other.profile and other.profile.headline else 'عضو في مهنة' }}</small>
+            </div>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('profiles.public_profile', user_id=other.id) }}">{{ ui.icon('user', 14) }} الملف</a>
+          </header>
+
+          <div class="chat-scroll" id="chat-scroll">
+            {% for message in active.messages %}
+              <div class="chat-day">{{ message.created_at|relative_time }}</div>
+              <div class="bubble-row {{ 'mine' if message.sender_id == current_user.id }}">
+                <div class="bubble {{ 'mine' if message.sender_id == current_user.id }}">
+                  {{ message.body }}
+                  <time datetime="{{ message.created_at.isoformat() }}">{{ message.created_at.strftime('%H:%M') }}</time>
+                </div>
+              </div>
+            {% else %}
+              <p class="chat-empty">لا توجد رسائل بعد. أرسل أول رسالة لبدء المحادثة.</p>
+            {% endfor %}
+          </div>
+
+          <form class="composer" method="post" action="{{ url_for('messages.send', thread_id=active.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="visually-hidden" for="message-body">نص الرسالة</label>
+            <textarea class="textarea grow" id="message-body" name="body" rows="1" maxlength="4000"
+                      placeholder="اكتب رسالتك…" required></textarea>
+            <button class="btn btn-primary" type="submit" aria-label="إرسال">{{ ui.icon('send', 16) }} إرسال</button>
+          </form>
+        {% else %}
+          <div class="chat-empty">اختر محادثة من القائمة لعرض الرسائل.</div>
+        {% endif %}
+      </section>
+    </div>
+  {% else %}
+    <div class="panel-body">
+      {% with title='لا توجد محادثات بعد', body='ابدأ محادثة من الملف المهني لأي صاحب عمل أو باحث عن عمل.', icon='message' %}
+        {% include "components/empty_state.html" %}
+      {% endwith %}
+      <div class="center mt-4">
+        <a class="btn btn-primary" href="{{ url_for('public.jobs') }}">تصفّح الوظائف</a>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if active %}
+<script>
+  (function () {
+    var scroll = document.getElementById("chat-scroll");
+    if (scroll) scroll.scrollTop = scroll.scrollHeight;
+    var input = document.getElementById("message-body");
+    if (input) {
+      input.addEventListener("input", function () {
+        input.style.height = "auto";
+        input.style.height = Math.min(input.scrollHeight, 130) + "px";
+      });
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          input.form.submit();
+        }
+      });
+    }
+  })();
+</script>
+{% endif %}
+{% endblock %}

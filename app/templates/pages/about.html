@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}من نحن — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container container-narrow section">
+  <h1 class="mb-4">نبني سوق عمل عراقي يثق به الطرفان</h1>
+  <p class="muted mb-6">
+    مهنة منصة عراقية تجمع الوظائف الموثّقة في مكان واحد، وتعطي الباحث عن عمل أدوات حقيقية:
+    تقديم سريع، متابعة لكل طلب، وشفافية بالراتب.
+  </p>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="card"><h3 class="mb-2">رسالتنا</h3><p class="small muted">تقليل الاحتكاك بين الباحثين وأصحاب العمل، ومنع الوظائف الوهمية.</p></div>
+    <div class="card"><h3 class="mb-2">قيمنا</h3><p class="small muted">شفافية، تحقق، وسهولة استخدام على الهاتف أولًا.</p></div>
+    <div class="card"><h3 class="mb-2">التزامنا</h3><p class="small muted">لا نطلب رسومًا من الباحثين، ونراجع البلاغات خلال 24 ساعة.</p></div>
+  </div>
+
+  <section id="trust" class="card mt-6">
+    <h2 class="mb-4">{{ ui.icon('shield', 20) }} الثقة والأمان</h2>
+    <ul class="detail-list">
+      <li>الشركات تُوثّق بعد مراجعة السجل التجاري ورقم هاتف ثابت.</li>
+      <li>أي وظيفة تطلب منك دفع رسوم تأشيرة أو «معاملة» هي وظيفة مشبوهة — أبلغ عنها.</li>
+      <li>ثلاثة بلاغات مستقلة تخفي الوظيفة تلقائيًا حتى المراجعة.</li>
+      <li>لا نعرض أرقام هواتف الباحثين لأصحاب العمل دون موافقة.</li>
+    </ul>
+  </section>
+
+  <section id="privacy" class="card mt-4">
+    <h2 class="mb-4">الخصوصية</h2>
+    <p class="small muted">
+      نجمع أقل قدر ممكن من البيانات: الاسم، البريد، ورقم الهاتف للتحقق. يمكنك حذف حسابك
+      وبياناتك في أي وقت من صفحة الملف الشخصي.
+    </p>
+  </section>
+</div>
+{% endblock %}

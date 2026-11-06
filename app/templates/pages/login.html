@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+{% from "components/google_auth.html" import google_button %}
+
+{% block title %}تسجيل الدخول — {{ site_name }}{% endblock %}
+{% block footer %}{% endblock %}
+{% block mobile_nav %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <aside class="auth-aside">
+    <h2>{{ 'حسابك جاهز' if signed_in else 'أهلًا بعودتك' }}</h2>
+    <p>
+      {{ 'تابع من حيث توقفت، أو بدّل الحساب بضغطة واحدة.' if signed_in
+         else 'تابع طلباتك، حدّث ملفك، واكتشف فرصًا جديدة اليوم.' }}
+    </p>
+    <ul>
+      <li>{{ ui.icon('check', 18) }} إشعارات فورية لكل تحديث على طلبك</li>
+      <li>{{ ui.icon('check', 18) }} وظائف محفوظة للرجوع إليها</li>
+      <li>{{ ui.icon('check', 18) }} تقديم سريع بضغطة واحدة</li>
+    </ul>
+  </aside>
+
+  <div class="auth-main">
+    <div class="auth-card">
+      {% if signed_in %}
+        {% set role_labels = {'seeker': 'باحث عن عمل', 'employer': 'صاحب عمل', 'admin': 'مسؤول النظام'} %}
+        {% set home_endpoint = 'admin.dashboard' if current_user.is_admin
+                              else ('employer.dashboard' if current_user.role == 'employer' else 'seeker.dashboard') %}
+        <div>
+          <h1 style="font-size:var(--fs-2xl)">أنت مسجل الدخول</h1>
+          <p class="muted small">هذا هو الحساب النشط حاليًا في المتصفح.</p>
+        </div>
+
+        <div class="account-chip">
+          <span class="avatar avatar-lg">
+            {% if current_user.avatar_url %}
+              <img src="{{ current_user.avatar_url }}" alt="" referrerpolicy="no-referrer">
+            {% else %}
+              {{ current_user.full_name|initials }}
+            {% endif %}
+          </span>
+          <div class="stack" style="gap:2px">
+            <strong>{{ current_user.full_name }}</strong>
+            <span class="small muted" dir="ltr">{{ current_user.email }}</span>
+            <span class="badge badge-brand" style="justify-self:start">
+              {{ role_labels.get(current_user.role, current_user.role) }}
+            </span>
+          </div>
+        </div>
+
+        <a class="btn btn-primary btn-block btn-lg" href="{{ url_for(home_endpoint) }}">المتابعة إلى حسابي</a>
+
+        <form method="post" action="{{ url_for('auth.switch_account') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-block" type="submit">
+            {{ ui.icon('swap', 17) }} تبديل الحساب
+          </button>
+        </form>
+
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-block" type="submit">
+            {{ ui.icon('logout', 17) }} تسجيل الخروج
+          </button>
+        </form>
+
+        <p class="xs muted center">
+          «تبديل الحساب» يسجّل خروجك ثم يفتح اختيار حساب Google من جديد.
+        </p>
+      {% else %}
+        <div>
+          <h1 style="font-size:var(--fs-2xl)">تسجيل الدخول</h1>
+          <p class="muted small">ليس لديك حساب؟ <a href="{{ url_for('auth.register') }}">أنشئ حسابًا مجانًا</a></p>
+        </div>
+
+        {{ google_button(next_url=next_url) }}
+
+        <div class="auth-divider">أو بالبريد الإلكتروني</div>
+
+        <form method="post" class="stack" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ next_url }}">
+
+          <div class="field">
+            <label for="email">البريد الإلكتروني</label>
+            <input class="input" id="email" name="email" type="email" required autocomplete="email"
+                   value="{{ form.get('email', '') }}" dir="ltr" placeholder="you@example.com">
+          </div>
+
+          <div class="field">
+            <label for="password">كلمة المرور</label>
+            <input class="input" id="password" name="password" type="password" required
+                   autocomplete="current-password" placeholder="••••••••">
+          </div>
+
+          <div class="split">
+            <label class="check">
+              <input type="checkbox" name="remember" value="1">
+              ابقني مسجلًا على هذا الجهاز
+            </label>
+            <a class="small" href="{{ url_for('auth.forgot_password') }}">نسيت كلمة المرور؟</a>
+          </div>
+
+          <button class="btn btn-primary btn-block btn-lg" type="submit">دخول</button>
+        </form>
+
+        <p class="xs muted center">بالمتابعة أنت توافق على شروط الاستخدام وسياسة الخصوصية.</p>
+
+        {% if config['DEMO_ACCOUNTS'] %}
+          <hr class="rule">
+          <div class="stack">
+            <h3 class="h3 mb-2">جرب منصة مهنة بسرعة</h3>
+            <p class="small muted">اختر حسابًا تجريبيًا وسنحوّلك إلى لوحته مباشرة — بدون كتابة بريد أو كلمة مرور.</p>
+            {% for account in config['DEMO_ACCOUNTS'] %}
+              <form method="post" action="{{ url_for('auth.login_demo', account_key=account['key']) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="split" style="gap: var(--sp-3)">
+                  <span class="row strong small">
+                    <span class="avatar" style="width:32px;height:32px;font-size:var(--fs-xs)">{{ account['email'][0] | upper }}</span>
+                    {{ account['label'] }}
+                  </span>
+                  <span class="mono small muted" dir="ltr" style="font-size:var(--fs-xs)">{{ account['email'] }}</span>
+                </div>
+                <button class="btn btn-ghost btn-sm btn-block mt-2" type="submit">دخول كـ {{ account['label'] }} بضغطة</button>
+              </form>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

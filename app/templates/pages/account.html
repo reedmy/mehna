@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}إعدادات الحساب — {{ site_name }}{% endblock %}
+
+{% block content %}
+{% set role_labels = {'seeker': 'باحث عن عمل', 'employer': 'صاحب عمل', 'admin': 'مسؤول النظام'} %}
+{% set home_endpoint = 'admin.dashboard' if current_user.is_admin
+                      else ('employer.dashboard' if current_user.role == 'employer' else 'seeker.dashboard') %}
+
+<div class="container section-sm">
+  <div class="split mb-6">
+    <div>
+      <h1 style="font-size:var(--fs-2xl)">إعدادات الحساب</h1>
+      <p class="muted small">تحكّم ببياناتك، أمانك، والحساب المستخدم حاليًا.</p>
+    </div>
+    <a class="btn btn-ghost btn-sm" href="{{ url_for(home_endpoint) }}">{{ ui.icon('grid', 15) }} لوحتي</a>
+  </div>
+
+  <div class="account-head card mb-6">
+    <span class="avatar avatar-lg">
+      {% if current_user.avatar_url %}
+        <img src="{{ current_user.avatar_url }}" alt="" referrerpolicy="no-referrer">
+      {% else %}
+        {{ current_user.full_name|initials }}
+      {% endif %}
+    </span>
+    <div class="stack" style="gap:2px">
+      <strong style="font-size:var(--fs-lg)">{{ current_user.full_name }}</strong>
+      <span class="small muted" dir="ltr">{{ current_user.email }}</span>
+      <div class="row" style="gap:6px;flex-wrap:wrap">
+        <span class="badge badge-brand">{{ role_labels.get(current_user.role, current_user.role) }}</span>
+        {% if current_user.google_id %}
+          <span class="badge">{{ ui.icon('check', 12) }} مرتبط بـ Google</span>
+        {% endif %}
+        {% if current_user.email_verified_at %}
+          <span class="badge">{{ ui.icon('check', 12) }} البريد موثّق</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.6fr 1fr;align-items:start">
+    <div class="stack">
+      <form method="post" action="{{ url_for('auth.account') }}" class="card stack" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2 style="font-size:var(--fs-md)">بيانات التواصل</h2>
+        <p class="small muted">تُستخدم في طلبات التقديم، ويمكنك تعديلها في أي وقت.</p>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="full_name">الاسم الكامل</label>
+            <input class="input" id="full_name" name="full_name" required autocomplete="name"
+                   value="{{ current_user.full_name }}">
+          </div>
+          <div class="field">
+            <label for="phone">رقم الهاتف</label>
+            <input class="input" id="phone" name="phone" type="tel" inputmode="tel" dir="ltr"
+                   autocomplete="tel" value="{{ current_user.phone or '' }}" placeholder="0770 123 4567">
+          </div>
+          <div class="field span-2">
+            <label>البريد الإلكتروني</label>
+            <input class="input" value="{{ current_user.email }}" dir="ltr" disabled>
+            <span class="hint">
+              {% if current_user.google_id %}
+                البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.
+              {% else %}
+                لتغيير البريد، تواصل مع الدعم.
+              {% endif %}
+            </span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" type="submit">حفظ البيانات</button>
+      </form>
+
+      {% if current_user.role == 'seeker' %}
+        <div class="card stack">
+          <div class="split">
+            <h2 style="font-size:var(--fs-md)">ملفي المهني</h2>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('seeker.profile') }}">{{ ui.icon('edit', 14) }} تعديل</a>
+          </div>
+          <p class="small muted">
+            المهارات، النبذة، الخبرة، ورابط السيرة الذاتية — تظهر لأصحاب العمل عند التقديم.
+          </p>
+          <div class="progress"><span style="width:{{ (current_user.profile.completeness if current_user.profile else 0) }}%"></span></div>
+          <span class="xs muted">{{ (current_user.profile.completeness if current_user.profile else 0) }}% مكتمل</span>
+        </div>
+      {% elif current_user.role == 'employer' %}
+        <div class="card stack">
+          <div class="split">
+            <h2 style="font-size:var(--fs-md)">ملف الشركة</h2>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('employer.company') }}">{{ ui.icon('edit', 14) }} تعديل</a>
+          </div>
+          <p class="small muted">بيانات الشركة، الشعار، والتوثيق — تظهر للباحثين على كل وظيفة.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <aside class="stack">
+      <div class="card stack">
+        <h2 style="font-size:var(--fs-md)">{{ ui.icon('shield', 16) }} الأمان</h2>
+        <form method="post" action="{{ url_for('auth.account_password') }}" class="stack">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          {% if current_user.google_id %}
+            <p class="xs muted">حسابك يعمل عبر Google. يمكنك تعيين كلمة مرور احتياطية للدخول بالبريد.</p>
+          {% else %}
+            <div class="field">
+              <label for="current_password">كلمة المرور الحالية</label>
+              <input class="input" id="current_password" name="current_password" type="password"
+                     autocomplete="current-password">
+            </div>
+          {% endif %}
+          <div class="field">
+            <label for="new_password">{{ 'كلمة مرور جديدة' if current_user.google_id else 'كلمة المرور الجديدة' }}</label>
+            <input class="input" id="new_password" name="new_password" type="password" required
+                   autocomplete="new-password" placeholder="8 أحرف على الأقل، مع رقم">
+          </div>
+          <button class="btn btn-ghost btn-block" type="submit">
+            {{ 'تعيين كلمة مرور' if current_user.google_id else 'تحديث كلمة المرور' }}
+          </button>
+        </form>
+      </div>
+
+      <div class="card stack">
+        <h2 style="font-size:var(--fs-md)">{{ ui.icon('swap', 16) }} الحساب</h2>
+        <p class="xs muted">تريد الدخول بحساب آخر؟ بدّل الحساب دون تسجيل خروج يدوي.</p>
+        <form method="post" action="{{ url_for('auth.switch_account') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-accent btn-block" type="submit">تبديل الحساب</button>
+        </form>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-ghost btn-block" type="submit">{{ ui.icon('logout', 15) }} تسجيل الخروج</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

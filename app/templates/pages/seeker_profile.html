@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}ملفي الشخصي — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <div class="split mb-6">
+    <div>
+      <h1 style="font-size:var(--fs-2xl)">ملفي الشخصي</h1>
+      <p class="muted small">كل ما تضيفه هنا يظهر لأصحاب العمل عند التقديم.</p>
+    </div>
+    <div class="row" style="gap:8px">
+      <span class="badge badge-brand">{{ profile.completeness }}% مكتمل</span>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('auth.account') }}">إعدادات الحساب</a>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.6fr 1fr;align-items:start">
+    <form method="post" class="card stack" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <h2 style="font-size:var(--fs-md)">البيانات الأساسية</h2>
+      <div class="field">
+        <label>البريد الإلكتروني</label>
+        <input class="input" value="{{ current_user.email }}" dir="ltr" disabled>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="full_name">الاسم الكامل</label>
+          <input class="input" id="full_name" name="full_name" value="{{ current_user.full_name }}" required>
+        </div>
+        <div class="field">
+          <label for="phone">رقم الهاتف</label>
+          <input class="input" id="phone" name="phone" type="tel" dir="ltr" value="{{ current_user.phone or '' }}" placeholder="0770 123 4567">
+        </div>
+        <div class="field span-2">
+          <label for="headline">العنوان المهني</label>
+          <input class="input" id="headline" name="headline" value="{{ profile.headline or '' }}"
+                 placeholder="مثال: مطوّر ويب — Python وFlask">
+        </div>
+        <div class="field">
+          <label for="city">المدينة</label>
+          <select class="select" id="city" name="city">
+            <option value="">اختر المدينة</option>
+            {% for city in cities %}
+              <option value="{{ city }}" {{ 'selected' if profile.city == city }}>{{ city }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="experience_years">سنوات الخبرة</label>
+          <input class="input" id="experience_years" name="experience_years" type="number" min="0" max="60"
+                 inputmode="numeric" value="{{ profile.experience_years or 0 }}">
+        </div>
+        <div class="field span-2">
+          <label for="bio">نبذة عنك</label>
+          <textarea class="textarea" id="bio" name="bio" rows="4">{{ profile.bio or '' }}</textarea>
+        </div>
+      </div>
+
+      <h2 style="font-size:var(--fs-md)" class="mt-4">المهارات والروابط</h2>
+      <div class="form-grid">
+        <div class="field span-2">
+          <label for="skills">المهارات</label>
+          <input class="input" id="skills" name="skills" value="{{ (profile.skills or [])|join(', ') }}"
+                 placeholder="Python, Excel, تسويق رقمي">
+          <span class="hint">افصل بينها بفاصلة.</span>
+        </div>
+        <div class="field">
+          <label for="languages">اللغات</label>
+          <input class="input" id="languages" name="languages" value="{{ (profile.languages or [])|join(', ') }}"
+                 placeholder="العربية, English">
+        </div>
+        <div class="field">
+          <label for="github_url">GitHub</label>
+          <input class="input" id="github_url" name="github_url" dir="ltr" value="{{ profile.github_url or '' }}">
+        </div>
+        <div class="field">
+          <label for="linkedin_url">LinkedIn</label>
+          <input class="input" id="linkedin_url" name="linkedin_url" dir="ltr" value="{{ profile.linkedin_url or '' }}">
+        </div>
+        <div class="field">
+          <label for="portfolio_url">موقع/أعمال</label>
+          <input class="input" id="portfolio_url" name="portfolio_url" dir="ltr" value="{{ profile.portfolio_url or '' }}">
+        </div>
+        <div class="field span-2">
+          <label for="cv_url">رابط السيرة الذاتية</label>
+          <input class="input" id="cv_url" name="cv_url" type="url" dir="ltr"
+                 value="{{ profile.cv_url or '' }}" placeholder="https://drive.google.com/...">
+          <span class="hint">رابط عام (Google Drive، Dropbox...) — يظهر لأصحاب العمل عند التقديم.</span>
+        </div>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" name="is_open_to_work" value="1" {{ 'checked' if profile.is_open_to_work }}>
+        متاح للعمل الآن — أظهر شارة «متاح» لأصحاب العمل
+      </label>
+
+      <button class="btn btn-primary" type="submit">حفظ التغييرات</button>
+    </form>
+
+    <aside class="stack">
+      <div class="card">
+        <div class="split mb-2">
+          <h3 style="font-size:var(--fs-md)">اكتمال الملف</h3>
+          <strong class="small">{{ profile.completeness }}%</strong>
+        </div>
+        <div class="progress"><span style="width:{{ profile.completeness }}%"></span></div>
+        <ul class="detail-list mt-4">
+          <li>{{ '✓' if profile.headline else '•' }} عنوان مهني</li>
+          <li>{{ '✓' if profile.bio else '•' }} نبذة</li>
+          <li>{{ '✓' if profile.skills else '•' }} مهارات</li>
+          <li>{{ '✓' if current_user.phone else '•' }} رقم هاتف</li>
+        </ul>
+      </div>
+
+      <form method="post" action="{{ url_for('seeker.password') }}" class="card stack">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h3 style="font-size:var(--fs-md)">{{ ui.icon('shield', 16) }} كلمة المرور</h3>
+        <div class="field">
+          <label for="current_password">الحالية</label>
+          <input class="input" id="current_password" name="current_password" type="password" required autocomplete="current-password">
+        </div>
+        <div class="field">
+          <label for="new_password">الجديدة</label>
+          <input class="input" id="new_password" name="new_password" type="password" required autocomplete="new-password">
+        </div>
+        <button class="btn btn-ghost" type="submit">تحديث كلمة المرور</button>
+      </form>
+    </aside>
+  </div>
+</div>
+{% endblock %}

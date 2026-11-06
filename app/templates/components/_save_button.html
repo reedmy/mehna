@@ -1,0 +1,7 @@
+{% import "components/icons.html" as ui %}
+<button class="save-btn {{ 'is-saved' if saved }}" title="حفظ"
+        hx-post="{{ url_for('api.toggle_save', job_id=job.id) }}"
+        hx-swap="outerHTML"
+        aria-label="{{ 'إزالة من المحفوظة' if saved else 'حفظ الوظيفة' }}">
+  {{ ui.icon('bookmark', 16) }}
+</button>

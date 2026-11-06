@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}الوظائف — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <form class="search-card mb-4" action="{{ url_for('public.jobs') }}" method="get" role="search" style="max-width:none">
+    <input class="input" name="q" type="search" value="{{ filters.q }}" placeholder="ابحث عن مسمى وظيفي أو شركة…">
+    <select class="select" name="city">
+      <option value="">كل المدن</option>
+      {% for city in cities %}<option value="{{ city }}" {{ 'selected' if filters.city == city }}>{{ city }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-primary" type="submit">{{ ui.icon('search', 17) }} ابحث</button>
+  </form>
+
+  <div class="browse">
+    <aside class="filters" id="filters">
+      <div class="split">
+        <h2 style="font-size:var(--fs-md)">الفلاتر</h2>
+        <a class="xs" href="{{ url_for('public.jobs') }}">مسح الكل</a>
+      </div>
+
+      <form id="filter-form" hx-get="{{ url_for('public.jobs') }}" hx-target="#job-results" hx-push-url="true"
+            hx-trigger="change" hx-include="closest form">
+        <input type="hidden" name="q" value="{{ filters.q }}">
+
+        <div class="filter-group">
+          <h3>نوع الدوام</h3>
+          <label class="filter-option">
+            <input type="radio" name="job_type" value="" {{ 'checked' if not filters.job_type }}> الكل
+          </label>
+          {% for value, label in job_types.items() %}
+            <label class="filter-option">
+              <input type="radio" name="job_type" value="{{ value }}" {{ 'checked' if filters.job_type == value }}>
+              {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+
+        <div class="filter-group">
+          <h3>مكان العمل</h3>
+          <label class="filter-option">
+            <input type="radio" name="work_mode" value="" {{ 'checked' if not filters.work_mode }}> الكل
+          </label>
+          {% for value, label in work_modes.items() %}
+            <label class="filter-option">
+              <input type="radio" name="work_mode" value="{{ value }}" {{ 'checked' if filters.work_mode == value }}>
+              {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+
+        <div class="filter-group">
+          <h3>المستوى</h3>
+          <label class="filter-option">
+            <input type="radio" name="career_level" value="" {{ 'checked' if not filters.career_level }}> الكل
+          </label>
+          {% for value, label in levels.items() %}
+            <label class="filter-option">
+              <input type="radio" name="career_level" value="{{ value }}" {{ 'checked' if filters.career_level == value }}>
+              {{ label }}
+            </label>
+          {% endfor %}
+        </div>
+
+        <div class="filter-group">
+          <h3>المدينة</h3>
+          <select class="select" name="city">
+            <option value="">كل المدن</option>
+            {% for city in cities %}<option value="{{ city }}" {{ 'selected' if filters.city == city }}>{{ city }}</option>{% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <h3>القطاع</h3>
+          <select class="select" name="industry">
+            <option value="">كل القطاعات</option>
+            {% for industry in industries %}<option value="{{ industry }}" {{ 'selected' if filters.industry == industry }}>{{ industry }}</option>{% endfor %}
+          </select>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" name="verified_only" value="1" {{ 'checked' if filters.verified_only }}>
+          الشركات الموثّقة فقط
+        </label>
+
+        <label class="check">
+          <input type="checkbox" name="salary_min" value="1000000" {{ 'checked' if filters.salary_min }}>
+          راتب مليون د.ع أو أكثر
+        </label>
+      </form>
+
+      <button class="btn btn-primary btn-block" onclick="document.getElementById('filters').classList.remove('is-open')">عرض النتائج</button>
+    </aside>
+
+    <section>
+      <div class="results-head">
+        <div>
+          <h1>{{ total }} وظيفة متاحة</h1>
+          <p class="muted small">مرتبة حسب الأحدث{% if filters.q %} · البحث: «{{ filters.q }}»{% endif %}</p>
+        </div>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm filter-toggle" onclick="document.getElementById('filters').classList.add('is-open')">
+            {{ ui.icon('filter', 15) }} الفلاتر
+          </button>
+          <select class="select" name="sort" form="filter-form" style="min-height:38px;max-width:170px"
+                  onchange="document.getElementById('filter-form').dispatchEvent(new Event('change'))">
+            <option value="newest" {{ 'selected' if filters.sort == 'newest' }}>الأحدث</option>
+            <option value="salary" {{ 'selected' if filters.sort == 'salary' }}>الأعلى راتبًا</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="job-results">
+        {% include "pages/_job_results.html" %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

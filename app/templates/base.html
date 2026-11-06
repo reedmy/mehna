@@ -1,0 +1,60 @@
+{% import "components/icons.html" as ui %}
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{% block title %}{{ site_name }} — منصة التوظيف العراقية{% endblock %}</title>
+  <meta name="description" content="{% block description %}مهنة — منصة عراقية تربط أصحاب العمل بالباحثين عن عمل. وظائف موثّقة، تقديم سريع، ومتابعة لكل طلب.{% endblock %}">
+  <meta name="theme-color" content="#1e293b">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ site_name }}">
+  <meta property="og:title" content="{% block og_title %}{{ site_name }} — منصة التوظيف العراقية{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}وظائف موثّقة في بغداد والبصرة وأربيل وكل العراق.{% endblock %}">
+  <meta property="og:locale" content="ar_IQ">
+  <meta property="og:image" content="{{ url_for('static', filename='img/logo.png', _external=True) }}">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/tokens.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block head_extra %}{% endblock %}
+
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/logo-mark.png') }}">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="visually-hidden" href="#main">تخطَّ إلى المحتوى</a>
+
+  {% block header %}{% include "components/navbar.html" %}{% endblock %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-stack" id="flash-stack">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}" role="status">
+            {{ ui.icon('check' if category == 'success' else 'alert' if category == 'error' else 'info', 18) }}
+            <span class="grow">{{ message }}</span>
+            <button class="btn-icon" style="width:24px;height:24px;min-height:0;background:none;border:0;color:var(--ink-400);cursor:pointer" onclick="this.parentElement.remove()" aria-label="إغلاق">{{ ui.icon('close', 14) }}</button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% block footer %}{% include "components/footer.html" %}{% endblock %}
+  {% block mobile_nav %}{% include "components/mobile_nav.html" %}{% endblock %}
+
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

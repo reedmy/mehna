@@ -1,0 +1,25 @@
+{% extends "admin_base.html" %}
+
+{% block title %}سجل الإجراءات — الإدارة{% endblock %}
+{% block admin_title %}سجل الإجراءات{% endblock %}
+
+{% block admin_content %}
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>الإجراء</th><th>المنفّذ</th><th>الهدف</th><th>التفاصيل</th><th>الوقت</th></tr></thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td><span class="badge">{{ row.action }}</span></td>
+          <td>{{ row.actor.full_name if row.actor else '—' }}</td>
+          <td class="xs muted">{{ row.target_type or '—' }} {{ row.target_id[:8] if row.target_id else '' }}</td>
+          <td class="xs muted">{{ row.meta }}</td>
+          <td class="xs muted">{{ row.created_at|relative_time }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5" class="muted center" style="padding:32px">لا توجد إجراءات مسجّلة بعد.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

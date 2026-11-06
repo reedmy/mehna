@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+{% from "components/job_card.html" import job_card %}
+
+{% block title %}{{ job.title }} — {{ job.company.name }} | {{ site_name }}{% endblock %}
+{% block description %}{{ job.description|striptags|truncate(150) }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <nav class="xs muted mb-4" aria-label="مسار التنقل">
+    <a href="{{ url_for('public.home') }}">الرئيسية</a> ·
+    <a href="{{ url_for('public.jobs') }}">الوظائف</a> ·
+    <span>{{ job.title }}</span>
+  </nav>
+
+  <div class="detail-grid">
+    <div class="detail-body">
+      <div class="card">
+        <div class="row" style="align-items:flex-start;gap:var(--sp-4)">
+          <div class="logo" style="width:64px;height:64px;font-size:var(--fs-lg)">
+            {% if job.company.logo_url %}
+              <img src="{{ job.company.logo_url }}" alt="{{ job.company.name }}">
+            {% else %}{{ job.company.initials }}{% endif %}
+          </div>
+          <div class="grow">
+            <h1 style="font-size:var(--fs-2xl)">{{ job.title }}</h1>
+            <p class="muted">
+              <a href="{{ url_for('public.company_detail', slug=job.company.slug) }}">{{ job.company.name }}</a>
+              {% if job.city %} · {{ job.city }}{% endif %}
+            </p>
+            <div class="cluster mt-2">
+              <span class="badge badge-accent" dir="auto">{{ job.salary_label }}</span>
+              <span class="badge">{{ job.job_type|job_type_label }}</span>
+              {% if job.work_mode and job.work_mode != 'onsite' %}<span class="badge badge-info">{{ job.work_mode|work_mode_label }}</span>{% endif %}
+              {% if job.career_level %}<span class="badge">{{ job.career_level|level_label }}</span>{% endif %}
+              {% if job.company.is_verified %}<span class="badge badge-success">{{ ui.icon('shield', 11) }} شركة موثّقة</span>{% endif %}
+              <span class="badge">{{ ui.icon('eye', 11) }} {{ job.views_count }} مشاهدة</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="card">
+        <h2 class="mb-4">وصف الوظيفة</h2>
+        <div class="prose">{{ job.description|safe }}</div>
+      </section>
+
+      {% if job.requirements %}
+        <section class="card">
+          <h2 class="mb-4">المتطلبات</h2>
+          <ul class="detail-list">
+            {% for item in job.requirements %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      {% if job.benefits %}
+        <section class="card">
+          <h2 class="mb-4">المزايا</h2>
+          <ul class="detail-list">
+            {% for item in job.benefits %}<li>{{ item }}</li>{% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      <section class="card" id="report">
+        <details>
+          <summary class="small strong" style="cursor:pointer;color:var(--ink-600)">
+            {{ ui.icon('flag', 14) }} الإبلاغ عن هذه الوظيفة
+          </summary>
+          <p class="xs muted mt-2">إذا طُلب منك دفع مال أو لاحظت معلومات مضللة، أبلغنا فورًا.</p>
+          <form method="post" action="{{ url_for('api.report_job', job_id=job.id) }}" class="mt-4">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+              <label for="reason">السبب</label>
+              <select class="select" id="reason" name="reason" required>
+                {% for value, label in report_reason_labels.items() %}
+                  <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field mt-4">
+              <label for="details">تفاصيل (اختياري)</label>
+              <textarea class="textarea" id="details" name="details" rows="3" style="min-height:90px"></textarea>
+            </div>
+            <button class="btn btn-danger btn-sm mt-4" type="submit">إرسال البلاغ</button>
+          </form>
+        </details>
+      </section>
+    </div>
+
+    <aside class="sidebar-card">
+      <div class="card">
+        {% if applied %}
+          <div class="badge badge-success mb-4">{{ ui.icon('check', 12) }} قدّمت على هذه الوظيفة</div>
+          <a class="btn btn-ghost btn-block" href="{{ url_for('seeker.applications') }}">تابع حالة الطلب</a>
+        {% elif current_user.is_authenticated and current_user.role == 'seeker' %}
+          <form method="post" action="{{ url_for('public.apply', job_id=job.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="slug" value="{{ job.slug }}">
+            <div class="field">
+              <label for="cover_letter">رسالة قصيرة (اختياري)</label>
+              <textarea class="textarea" id="cover_letter" name="cover_letter" rows="3"
+                        style="min-height:96px" placeholder="لماذا أنت مناسب لهذه الوظيفة؟"></textarea>
+            </div>
+            <button class="btn btn-primary btn-block mt-4" type="submit">التقديم السريع</button>
+            <a class="btn btn-ghost btn-sm btn-block mt-2"
+               href="{{ url_for('public.apply_form', job_id=job.id, slug=job.slug) }}">
+              أضف سيرتك وبياناتك أولًا
+            </a>
+          </form>
+        {% else %}
+          <a class="btn btn-primary btn-block" href="{{ url_for('auth.login', next=request.path) }}">سجّل دخول وقدّم</a>
+          <p class="xs muted center mt-2">التقديم مجاني تمامًا للباحثين.</p>
+        {% endif %}
+
+        <div class="row mt-4" style="gap:8px">
+          <button class="btn btn-ghost btn-sm grow" type="button"
+                  onclick="navigator.clipboard.writeText(location.href);this.textContent='تم النسخ ✓'">
+            {{ ui.icon('external', 14) }} نسخ الرابط
+          </button>
+          <a class="btn btn-ghost btn-sm" target="_blank" rel="noopener"
+             href="https://wa.me/?text={{ (job.title ~ ' — ' ~ job.company.name ~ ' ' ~ site_url ~ request.path)|urlencode }}">
+            {{ ui.icon('whatsapp', 15) }} واتساب
+          </a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="mb-4">تفاصيل الوظيفة</h3>
+        <dl class="meta-row"><dt>الراتب</dt><dd dir="auto">{{ job.salary_label }}</dd></dl>
+        <dl class="meta-row"><dt>نوع الدوام</dt><dd>{{ job.job_type|job_type_label }}</dd></dl>
+        <dl class="meta-row"><dt>مكان العمل</dt><dd>{{ job.work_mode|work_mode_label }}</dd></dl>
+        <dl class="meta-row"><dt>المستوى</dt><dd>{{ job.career_level|level_label }}</dd></dl>
+        <dl class="meta-row"><dt>الخبرة</dt><dd>{{ job.experience_years_min }}+ سنة</dd></dl>
+        <dl class="meta-row"><dt>المدينة</dt><dd>{{ job.city or '—' }}</dd></dl>
+        <dl class="meta-row"><dt>ينتهي</dt><dd>{{ job.expires_at|date_ar }}</dd></dl>
+        <dl class="meta-row"><dt>نُشرت</dt><dd>{{ job.published_at|relative_time }}</dd></dl>
+      </div>
+
+      <div class="card card-flat">
+        <h3 class="mb-2">عن الشركة</h3>
+        <div class="row mb-4">
+          <div class="logo">{{ job.company.initials }}</div>
+          <div class="grow">
+            <strong class="small">{{ job.company.name }}</strong>
+            <p class="xs muted">{{ job.company.industry or '—' }}{% if job.company.city %} · {{ job.company.city }}{% endif %}</p>
+          </div>
+        </div>
+        <p class="small muted">{{ job.company.description|truncate(160) if job.company.description else 'لا يوجد وصف بعد.' }}</p>
+        <a class="btn btn-ghost btn-sm btn-block mt-4" href="{{ url_for('public.company_detail', slug=job.company.slug) }}">ملف الشركة</a>
+        {% if current_user.is_authenticated and job.company.owner_id != current_user.id %}
+          <div class="row mt-2" style="gap:8px">
+            <a class="btn btn-ghost btn-sm grow" href="{{ url_for('profiles.public_profile', user_id=job.company.owner_id) }}">{{ ui.icon('user', 14) }} مسؤول التوظيف</a>
+            <form method="post" action="{{ url_for('messages.start', user_id=job.company.owner_id) }}" class="grow">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-soft btn-sm btn-block" type="submit">{{ ui.icon('message', 14) }} رسالة</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  {% if similar %}
+    <section class="section-sm">
+      <h2 class="mb-4">وظائف مشابهة</h2>
+      <div class="job-grid">{% for item in similar %}{{ job_card(item) }}{% endfor %}</div>
+    </section>
+  {% endif %}
+</div>
+
+<div class="apply-bar">
+  {% if applied %}
+    <a class="btn btn-ghost btn-block" href="{{ url_for('seeker.applications') }}">قدّمت بالفعل — تابع الطلب</a>
+  {% elif current_user.is_authenticated and current_user.role == 'seeker' %}
+    <form method="post" action="{{ url_for('public.apply', job_id=job.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="slug" value="{{ job.slug }}">
+      <button class="btn btn-primary btn-block" type="submit">التقديم السريع</button>
+    </form>
+  {% else %}
+    <a class="btn btn-primary btn-block" href="{{ url_for('auth.login', next=request.path) }}">سجّل دخول وقدّم</a>
+  {% endif %}
+</div>
+{% endblock %}

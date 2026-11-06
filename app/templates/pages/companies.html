@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}الشركات — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <h1 class="mb-2">شركات موثّقة</h1>
+  <p class="muted mb-6">نتحقق من كل شركة قبل منحها شارة التوثيق — لتقدّم بثقة.</p>
+
+  {% if pagination.items %}
+    <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr))">
+      {% for company in pagination.items %}
+        <a class="card" href="{{ url_for('public.company_detail', slug=company.slug) }}" style="color:inherit">
+          <div class="row mb-4">
+            <div class="logo">{{ company.initials }}</div>
+            <div class="grow">
+              <h3 style="font-size:var(--fs-md)">{{ company.name }}</h3>
+              <p class="xs muted">{{ company.industry or '—' }}{% if company.city %} · {{ company.city }}{% endif %}</p>
+            </div>
+          </div>
+          <p class="small muted">{{ company.description|truncate(120) if company.description else 'لا يوجد وصف.' }}</p>
+          <div class="cluster mt-4">
+            <span class="badge badge-success">{{ ui.icon('shield', 11) }} موثّقة</span>
+            <span class="badge">{{ company.jobs|length }} وظيفة</span>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+    {% include "components/pagination.html" %}
+  {% else %}
+    {% with title='لا توجد شركات موثّقة بعد', body='نراجع طلبات التوثيق يوميًا. عد قريبًا.', icon='building' %}
+      {% include "components/empty_state.html" %}
+    {% endwith %}
+  {% endif %}
+</div>
+{% endblock %}

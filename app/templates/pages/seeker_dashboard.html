@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+{% from "components/job_card.html" import job_card %}
+
+{% block title %}لوحتي — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm">
+  <div class="split mb-6">
+    <div>
+      <h1 style="font-size:var(--fs-2xl)">أهلًا، {{ current_user.first_name }} 👋</h1>
+      <p class="muted small">هذه نظرة سريعة على نشاطك على مهنة.</p>
+    </div>
+    <div class="row">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('profiles.public_profile', user_id=current_user.id) }}">{{ ui.icon('eye', 15) }} ملفي العام</a>
+      <a class="btn btn-primary" href="{{ url_for('public.jobs') }}">{{ ui.icon('search', 16) }} ابحث عن وظيفة</a>
+    </div>
+  </div>
+
+  <div class="stat-grid mb-6">
+    <div class="stat">
+      <div class="stat-label">كل الطلبات</div>
+      <div class="stat-value">{{ stats.applications }}</div>
+      <div class="stat-foot">منذ إنشاء الحساب</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">قيد المتابعة</div>
+      <div class="stat-value">{{ stats.in_progress }}</div>
+      <div class="stat-foot">لم يُحسم بعد</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">مقابلات</div>
+      <div class="stat-value">{{ stats.interviews }}</div>
+      <div class="stat-foot">حظًا موفقًا!</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">وظائف محفوظة</div>
+      <div class="stat-value">{{ stats.saved }}</div>
+      <div class="stat-foot"><a href="{{ url_for('seeker.saved') }}">عرض القائمة</a></div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">رسائل غير مقروءة</div>
+      <div class="stat-value">{{ stats.messages }}</div>
+      <div class="stat-foot"><a href="{{ url_for('messages.inbox') }}">فتح الرسائل</a></div>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:1.5fr 1fr;align-items:start">
+    <section class="panel">
+      <div class="panel-head">
+        <h2 style="font-size:var(--fs-md)">آخر الطلبات</h2>
+        <a class="small" href="{{ url_for('seeker.applications') }}">كل الطلبات</a>
+      </div>
+      {% if applications %}
+        <div class="table-wrap" style="border:0">
+          <table class="data">
+            <thead>
+              <tr><th>الوظيفة</th><th>الشركة</th><th>الحالة</th><th>التاريخ</th></tr>
+            </thead>
+            <tbody>
+              {% for app in applications %}
+                <tr>
+                  <td><a href="{{ url_for('public.job_detail', job_id=app.job.id, slug=app.job.slug) }}">{{ app.job.title }}</a></td>
+                  <td class="muted">{{ app.job.company.name }}</td>
+                  <td><span class="badge badge-{{ status_tones.get(app.status, 'neutral') }}">{{ status_labels.get(app.status, app.status) }}</span></td>
+                  <td class="muted xs">{{ app.created_at|relative_time }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="panel-body">
+          {% with title='لم تقدّم على أي وظيفة بعد', body='ابدأ بتصفح الوظائف وقدّم على ما يناسب مهاراتك.', icon='briefcase', cta_label='تصفح الوظائف', cta_url=url_for('public.jobs') %}
+            {% include "components/empty_state.html" %}
+          {% endwith %}
+        </div>
+      {% endif %}
+    </section>
+
+    <aside class="stack">
+      <div class="card">
+        <div class="split mb-2">
+          <h3 style="font-size:var(--fs-md)">اكتمال الملف</h3>
+          <strong class="small">{{ profile.completeness }}%</strong>
+        </div>
+        <div class="progress mb-4"><span style="width:{{ profile.completeness }}%"></span></div>
+        <p class="small muted mb-4">
+          الملفات المكتملة تحصل على فرص أعلى — أضف مهاراتك وخبرتك.
+        </p>
+        <a class="btn btn-soft btn-block" href="{{ url_for('seeker.profile') }}">تحسين الملف</a>
+      </div>
+
+      <div class="card card-flat">
+        <h3 style="font-size:var(--fs-md)" class="mb-2">نصيحة سريعة</h3>
+        <p class="small muted">
+          اكتب رسالة قصيرة مخصصة لكل وظيفة — تزيد فرص الاستجابة بشكل ملحوظ.
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  {% if recommended %}
+    <section class="section-sm">
+      <div class="split mb-4">
+        <h2>قد يناسبك</h2>
+        <a class="small" href="{{ url_for('public.jobs') }}">المزيد</a>
+      </div>
+      <div class="job-grid">{% for job in recommended %}{{ job_card(job) }}{% endfor %}</div>
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

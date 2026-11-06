@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+{% from "components/google_auth.html" import google_button %}
+
+{% block title %}إنشاء حساب — {{ site_name }}{% endblock %}
+{% block footer %}{% endblock %}
+{% block mobile_nav %}{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <aside class="auth-aside">
+    <h2>{{ 'وظّف أفضل الكفاءات' if role == 'employer' else 'ابدأ رحلتك المهنية' }}</h2>
+    <p>
+      {{ 'انشر وظائفك، وتابع المتقدمين في لوحة واحدة — مع شارة توثيق تبني الثقة.' if role == 'employer'
+         else 'أنشئ ملفك، قدّم على الوظائف، وتابع كل طلب خطوة بخطوة.' }}
+    </p>
+    <ul>
+      {% if role == 'employer' %}
+        <li>{{ ui.icon('check', 18) }} نشر الوظائف وإدارتها</li>
+        <li>{{ ui.icon('check', 18) }} مراجعة المتقدمين وقبولهم</li>
+        <li>{{ ui.icon('check', 18) }} توثيق الشركة وزيادة الثقة</li>
+      {% else %}
+        <li>{{ ui.icon('check', 18) }} تسجيل بضغطة عبر Google — بدون استمارة</li>
+        <li>{{ ui.icon('check', 18) }} لا نطلب بياناتك إلا عند التقديم</li>
+        <li>{{ ui.icon('check', 18) }} متابعة حالة كل طلب وتنبيهات</li>
+      {% endif %}
+    </ul>
+  </aside>
+
+  <div class="auth-main">
+    <div class="auth-card">
+      <div>
+        <h1 style="font-size:var(--fs-2xl)">إنشاء حساب</h1>
+        <p class="muted small">لديك حساب؟ <a href="{{ url_for('auth.login') }}">سجّل الدخول</a></p>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <a class="tab {{ 'is-active' if role != 'employer' }}" href="{{ url_for('auth.register', role='seeker') }}">باحث عن عمل</a>
+        <a class="tab {{ 'is-active' if role == 'employer' }}" href="{{ url_for('auth.register', role='employer') }}">صاحب عمل</a>
+      </div>
+
+      {{ google_button(role=role) }}
+
+      <p class="xs muted center">
+        لا نطلب اسمًا ولا رقم هاتف الآن — نأخذها من حساب Google، وتكمل الباقي وقت التقديم.
+      </p>
+
+      <details class="auth-more">
+        <summary>أو أنشئ حسابًا بالبريد الإلكتروني</summary>
+
+        <form method="post" class="stack mt-4" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="role" value="{{ role }}">
+
+          <div class="field">
+            <label for="full_name">الاسم الكامل</label>
+            <input class="input" id="full_name" name="full_name" required autocomplete="name"
+                   value="{{ form.get('full_name', '') }}" placeholder="مثال: علي حسين الجبوري">
+          </div>
+
+          <div class="field">
+            <label for="email">البريد الإلكتروني</label>
+            <input class="input" id="email" name="email" type="email" required autocomplete="email"
+                   value="{{ form.get('email', '') }}" dir="ltr" placeholder="you@example.com">
+          </div>
+
+          <div class="field">
+            <label for="phone">رقم الهاتف <span class="hint">(اختياري)</span></label>
+            <input class="input" id="phone" name="phone" type="tel" inputmode="tel" dir="ltr"
+                   autocomplete="tel" value="{{ form.get('phone', '') }}" placeholder="0770 123 4567">
+            <span class="hint">نستخدمه للتحقق من الحساب وإشعارات الوظائف فقط.</span>
+          </div>
+
+          <div class="field">
+            <label for="password">كلمة المرور</label>
+            <input class="input" id="password" name="password" type="password" required
+                   autocomplete="new-password" placeholder="8 أحرف على الأقل، مع رقم">
+          </div>
+
+          <label class="check">
+            <input type="checkbox" required> أوافق على شروط الاستخدام وسياسة الخصوصية
+          </label>
+
+          <button class="btn btn-ghost btn-block" type="submit">إنشاء الحساب بالبريد</button>
+        </form>
+      </details>
+    </div>
+  </div>
+</div>
+{% endblock %}

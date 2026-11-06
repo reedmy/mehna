@@ -1,0 +1,38 @@
+{% extends "admin_base.html" %}
+
+{% block title %}الوظائف — الإدارة{% endblock %}
+{% block admin_title %}الوظائف{% endblock %}
+
+{% block admin_content %}
+<form class="admin-toolbar" method="get">
+  <select class="select" name="status" onchange="this.form.submit()">
+    <option value="">كل الحالات</option>
+    {% for key, label in status_labels.items() %}
+      <option value="{{ key }}" {{ 'selected' if active_status == key }}>{{ label }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+<div class="table-wrap">
+  <table class="data">
+    <thead><tr><th>الوظيفة</th><th>الشركة</th><th>المدينة</th><th>الحالة</th><th>طلبات</th><th>مشاهدات</th><th>نُشرت</th></tr></thead>
+    <tbody>
+      {% for job in pagination.items %}
+        <tr>
+          <td><a href="{{ url_for('public.job_detail', job_id=job.id, slug=job.slug) }}">{{ job.title }}</a></td>
+          <td class="muted">{{ job.company.name }}</td>
+          <td class="muted">{{ job.city or '—' }}</td>
+          <td><span class="badge {{ 'badge-success' if job.is_open else 'badge-warning' }}">{{ status_labels.get(job.status, job.status) }}</span></td>
+          <td>{{ job.applications_count }}</td>
+          <td>{{ job.views_count }}</td>
+          <td class="xs muted">{{ job.published_at|relative_time if job.published_at else '—' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7" class="muted center" style="padding:32px">لا توجد وظائف مطابقة.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "components/pagination.html" %}
+{% endblock %}

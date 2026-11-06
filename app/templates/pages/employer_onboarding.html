@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}ابدأ التوظيف — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container container-narrow section">
+  <div class="center mb-6">
+    <div class="empty-icon" style="margin-inline:auto">{{ ui.icon('building', 26) }}</div>
+    <h1 class="mt-4">خطوة واحدة قبل نشر أول وظيفة</h1>
+    <p class="muted">أنشئ ملف شركتك، ثم اطلب التوثيق. بعد التوثيق تُنشر وظائفك مباشرة.</p>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+    <div class="card"><span class="badge badge-brand mb-2">1</span><h3 class="mb-2">ملف الشركة</h3><p class="small muted">الاسم، القطاع، المدينة، ووصف موجز.</p></div>
+    <div class="card"><span class="badge badge-brand mb-2">2</span><h3 class="mb-2">طلب التوثيق</h3><p class="small muted">راجع فريقنا الطلب خلال يوم عمل.</p></div>
+    <div class="card"><span class="badge badge-brand mb-2">3</span><h3 class="mb-2">انشر الوظيفة</h3><p class="small muted">تظهر للباحثين مع شارة «موثّقة».</p></div>
+  </div>
+
+  <div class="center mt-6">
+    <a class="btn btn-primary btn-lg" href="{{ url_for('employer.company') }}">إنشاء ملف الشركة</a>
+  </div>
+</div>
+{% endblock %}

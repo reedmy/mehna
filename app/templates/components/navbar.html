@@ -1,0 +1,101 @@
+{% import "components/icons.html" as ui %}
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="{{ url_for('public.home') }}" aria-label="{{ site_name }} — الرئيسية">
+      <span class="brand-mark"><img src="{{ url_for('static', filename='img/logo-mark.png') }}" alt="" width="26" height="26"></span>
+      <span>{{ site_name }}<small>منصة التوظيف العراقية</small></span>
+    </a>
+
+    <form class="nav-search" action="{{ url_for('public.jobs') }}" method="get" role="search">
+      <label class="visually-hidden" for="nav-q">ابحث عن وظيفة أو شركة</label>
+      {{ ui.icon('search', 16) }}
+      <input id="nav-q" name="q" type="search" placeholder="ابحث عن وظيفة أو شركة…" autocomplete="off"
+             value="{{ request.args.get('q', '') if request.endpoint == 'public.jobs' else '' }}">
+    </form>
+
+    <nav class="nav nav-links-desktop" aria-label="التنقل الرئيسي">
+      <a class="nav-link {{ 'is-active' if request.endpoint == 'public.home' }}" href="{{ url_for('public.home') }}">
+        {{ ui.icon('home', 20) }}<span class="nav-label">الرئيسية</span>
+      </a>
+      <a class="nav-link {{ 'is-active' if request.endpoint in ('public.jobs', 'public.job_detail') }}" href="{{ url_for('public.jobs') }}">
+        {{ ui.icon('briefcase', 20) }}<span class="nav-label">الوظائف</span>
+      </a>
+      <a class="nav-link {{ 'is-active' if request.endpoint in ('public.companies', 'public.company_detail') }}" href="{{ url_for('public.companies') }}">
+        {{ ui.icon('building', 20) }}<span class="nav-label">الشركات</span>
+      </a>
+      {% if current_user.is_authenticated %}
+        <a class="nav-link {{ 'is-active' if request.endpoint == 'messages.inbox' }}" href="{{ url_for('messages.inbox') }}">
+          {{ ui.icon('message', 20) }}<span class="nav-label">الرسائل</span>
+          {% if unread_messages %}<span class="nav-badge">{{ unread_messages }}</span>{% endif %}
+        </a>
+      {% endif %}
+    </nav>
+
+    <div class="nav-actions">
+      {% if current_user.is_authenticated %}
+        <div class="dropdown" data-dropdown>
+          <button class="nav-link" style="border:0;background:none" data-dropdown-toggle
+                  aria-label="الإشعارات" aria-haspopup="true" aria-expanded="false"
+                  hx-get="{{ url_for('api.notifications') }}" hx-trigger="click once" hx-target="#notif-panel">
+            {{ ui.icon('bell', 20) }}<span class="nav-label">الإشعارات</span>
+            <span id="notif-badge">{% if unread_notifications %}<span class="nav-badge">{{ unread_notifications }}</span>{% endif %}</span>
+          </button>
+          <div class="dropdown-panel" id="notif-panel" style="min-width:330px" data-dropdown-panel>
+            <div class="split" style="padding:8px 10px">
+              <strong class="small">الإشعارات</strong>
+              <button class="btn btn-sm btn-ghost" hx-post="{{ url_for('api.notifications_read_all') }}"
+                      hx-target="#notif-badge" hx-swap="innerHTML">تحديد الكل كمقروء</button>
+            </div>
+            <div class="notif-list" hx-get="{{ url_for('api.notifications') }}" hx-trigger="load" hx-swap="innerHTML">
+              <p class="muted small" style="padding:12px">جارٍ التحميل…</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="dropdown" data-dropdown>
+          <button class="nav-avatar-btn" data-dropdown-toggle aria-haspopup="true" aria-expanded="false" aria-label="حسابي">
+            <span class="avatar">
+              {% if current_user.display_avatar %}
+                <img src="{{ current_user.display_avatar }}" alt="" referrerpolicy="no-referrer">
+              {% else %}
+                {{ current_user.full_name|initials }}
+              {% endif %}
+            </span>
+            <span class="nav-label">{{ current_user.first_name }}</span>
+          </button>
+          <div class="dropdown-panel" data-dropdown-panel>
+            <div style="padding:8px 12px 10px;border-block-end:1px solid var(--ink-100);margin-block-end:4px">
+              <strong class="small">{{ current_user.full_name }}</strong>
+              <p class="xs muted truncate">{{ current_user.email }}</p>
+            </div>
+            {% if current_user.is_admin %}
+              <a class="dropdown-item" href="{{ url_for('admin.dashboard') }}">{{ ui.icon('shield', 17) }} لوحة الإدارة</a>
+            {% elif current_user.role == 'employer' %}
+              <a class="dropdown-item" href="{{ url_for('employer.dashboard') }}">{{ ui.icon('grid', 17) }} لوحة صاحب العمل</a>
+              <a class="dropdown-item" href="{{ url_for('employer.company') }}">{{ ui.icon('building', 17) }} ملف الشركة</a>
+              <a class="dropdown-item" href="{{ url_for('profiles.public_profile', user_id=current_user.id) }}">{{ ui.icon('user', 17) }} ملفي المهني</a>
+            {% else %}
+              <a class="dropdown-item" href="{{ url_for('seeker.dashboard') }}">{{ ui.icon('grid', 17) }} لوحتي</a>
+              <a class="dropdown-item" href="{{ url_for('profiles.public_profile', user_id=current_user.id) }}">{{ ui.icon('user', 17) }} ملفي المهني</a>
+              <a class="dropdown-item" href="{{ url_for('seeker.profile') }}">{{ ui.icon('edit', 17) }} تعديل الملف</a>
+              <a class="dropdown-item" href="{{ url_for('seeker.saved') }}">{{ ui.icon('bookmark', 17) }} الوظائف المحفوظة</a>
+            {% endif %}
+            <a class="dropdown-item" href="{{ url_for('auth.account') }}">{{ ui.icon('settings', 17) }} إعدادات الحساب</a>
+            <div class="dropdown-sep"></div>
+            <form method="post" action="{{ url_for('auth.switch_account') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="dropdown-item" type="submit">{{ ui.icon('swap', 17) }} تبديل الحساب</button>
+            </form>
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="dropdown-item" type="submit">{{ ui.icon('logout', 17) }} تسجيل الخروج</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <a class="btn btn-ghost btn-sm" style="--btn-fg:rgba(255,255,255,.82);--btn-border:rgba(255,255,255,.22)" href="{{ url_for('auth.login') }}">دخول</a>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('auth.register') }}">إنشاء حساب</a>
+      {% endif %}
+    </div>
+  </div>
+</header>

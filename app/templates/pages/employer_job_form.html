@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% import "components/icons.html" as ui %}
+
+{% block title %}{{ 'تعديل وظيفة' if job else 'وظيفة جديدة' }} — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="container section-sm" style="max-width:900px">
+  <h1 style="font-size:var(--fs-2xl)" class="mb-2">{{ 'تعديل الوظيفة' if job else 'نشر وظيفة جديدة' }}</h1>
+  <p class="muted small mb-6">{{ company.name }}</p>
+
+  {% if not company.is_verified %}
+    <div class="flash flash-info mb-4">
+      {{ ui.icon('info', 18) }}
+      <span>شركتك غير موثّقة بعد — ستُحفظ الوظيفة كمسودة وتُنشر بعد التوثيق.</span>
+    </div>
+  {% endif %}
+
+  <form method="post" class="card stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="field">
+      <label for="title">المسمى الوظيفي</label>
+      <input class="input" id="title" name="title" required value="{{ job.title if job else '' }}"
+             placeholder="مثال: محاسب أول">
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="city">المدينة</label>
+        <select class="select" id="city" name="city">
+          <option value="">اختر المدينة</option>
+          {% for city in cities %}
+            <option value="{{ city }}" {{ 'selected' if job and job.city == city }}>{{ city }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="job_type">نوع الدوام</label>
+        <select class="select" id="job_type" name="job_type">
+          {% for value, label in job_types.items() %}
+            <option value="{{ value }}" {{ 'selected' if job and job.job_type == value }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="work_mode">مكان العمل</label>
+        <select class="select" id="work_mode" name="work_mode">
+          {% for value, label in work_modes.items() %}
+            <option value="{{ value }}" {{ 'selected' if job and job.work_mode == value }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="career_level">المستوى</label>
+        <select class="select" id="career_level" name="career_level">
+          <option value="">غير محدد</option>
+          {% for value, label in levels.items() %}
+            <option value="{{ value }}" {{ 'selected' if job and job.career_level == value }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="experience_years_min">أقل خبرة (سنوات)</label>
+        <input class="input" id="experience_years_min" name="experience_years_min" type="number" min="0" max="40"
+               inputmode="numeric" value="{{ job.experience_years_min if job else 0 }}">
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="salary_min">الراتب من (د.ع)</label>
+        <input class="input" id="salary_min" name="salary_min" type="number" min="0" inputmode="numeric"
+               value="{{ job.salary_min if job and job.salary_min else '' }}">
+      </div>
+      <div class="field">
+        <label for="salary_max">الراتب إلى (د.ع)</label>
+        <input class="input" id="salary_max" name="salary_max" type="number" min="0" inputmode="numeric"
+               value="{{ job.salary_max if job and job.salary_max else '' }}">
+      </div>
+    </div>
+
+    <label class="check">
+      <input type="checkbox" name="salary_negotiable" value="1" {{ 'checked' if (job and job.salary_negotiable) or not job }}>
+      الراتب قابل للتفاوض (لن يظهر رقم)
+    </label>
+
+    <div class="field">
+      <label for="description">وصف الوظيفة</label>
+      <textarea class="textarea" id="description" name="description" rows="7" required
+                placeholder="المهام، المسؤوليات، وبيئة العمل…">{{ job.description if job else '' }}</textarea>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="requirements">المتطلبات</label>
+        <textarea class="textarea" id="requirements" name="requirements" rows="5" style="min-height:120px"
+                  placeholder="سطر لكل متطلب">{{ (job.requirements or [])|join('\n') if job else '' }}</textarea>
+      </div>
+      <div class="field">
+        <label for="benefits">المزايا</label>
+        <textarea class="textarea" id="benefits" name="benefits" rows="5" style="min-height:120px"
+                  placeholder="سطر لكل ميزة">{{ (job.benefits or [])|join('\n') if job else '' }}</textarea>
+      </div>
+    </div>
+
+    <div class="row">
+      <button class="btn btn-primary" type="submit">{{ 'حفظ التغييرات' if job else 'حفظ الوظيفة' }}</button>
+      <a class="btn btn-ghost" href="{{ url_for('employer.jobs') }}">إلغاء</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

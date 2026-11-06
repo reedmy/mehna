@@ -1,0 +1,9 @@
+{% for n in items %}
+  <a class="notif-item {{ 'is-unread' if not n.is_read }}" href="{{ n.link or '#' }}">
+    <strong>{{ n.title }}</strong>
+    {% if n.body %}<span>{{ n.body }}</span>{% endif %}
+    <span>{{ n.created_at|relative_time }}</span>
+  </a>
+{% else %}
+  <p class="muted small" style="padding:16px;text-align:center">لا توجد إشعارات بعد.</p>
+{% endfor %}

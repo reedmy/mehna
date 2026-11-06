@@ -1,0 +1,137 @@
+/* ─────────────────────────────────────────────────────────
+   مهنة — design tokens
+   Brand: navy (#1E293B) + blue (#3B82F6) + snow (#F8FAFC)
+   Type: Tajawal (Arabic) + Inter (Latin/numerals)
+   ───────────────────────────────────────────────────────── */
+
+:root {
+  /* Brand — professional blue */
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #3b82f6;
+  --brand-600: #2563eb;
+  --brand-700: #1d4ed8;
+  --brand-800: #1e40af;
+  --brand-900: #1e3a8a;
+
+  /* Navy scale — primary dark surfaces and headings */
+  --navy-950: #0b1220;
+  --navy-900: #0f172a;
+  --navy-800: #1e293b;
+  --navy-700: #334155;
+  --navy-600: #475569;
+  --navy-500: #64748b;
+
+  /* Accent — slate (secondary buttons, quiet surfaces) */
+  --accent-100: #f1f5f9;
+  --accent-200: #e2e8f0;
+  --accent-300: #cbd5e1;
+  --accent-400: #94a3b8;
+  --accent-500: #475569;
+  --accent-600: #1e293b;
+
+  /* Fixed dark surfaces (never inverted) */
+  --graphite-950: #0b1220;
+  --graphite-900: #0f172a;
+  --graphite-800: #1e293b;
+  --graphite-700: #334155;
+
+  /* Neutrals — cool slate */
+  --ink-900: #0f172a;
+  --ink-800: #1e293b;
+  --ink-700: #334155;
+  --ink-600: #475569;
+  --ink-500: #64748b;
+  --ink-400: #94a3b8;
+  --ink-300: #cbd5e1;
+  --ink-200: #e2e8f0;
+  --ink-100: #eef2f7;
+  --ink-50: #f8fafc;
+  --paper: #f8fafc;
+  --white: #ffffff;
+
+  /* Semantic */
+  --success: #15803d;
+  --success-bg: #e8f6ec;
+  --warning: #b45309;
+  --warning-bg: #fdf3e3;
+  --danger: #b42318;
+  --danger-bg: #fdecea;
+  --info: #1d4ed8;
+  --info-bg: #eaeffd;
+
+  /* Spacing (8pt) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 40px;
+  --sp-8: 56px;
+  --sp-9: 72px;
+  --sp-10: 96px;
+
+  /* Radii */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-full: 999px;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.07);
+  --shadow-md: 0 10px 28px -10px rgba(15, 23, 42, 0.18);
+  --shadow-lg: 0 26px 52px -18px rgba(15, 23, 42, 0.24);
+
+  /* Layout */
+  --container: 1320px;
+  --container-narrow: 760px;
+  --header-h: 64px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --fast: 140ms;
+  --normal: 220ms;
+
+  /* Typography */
+  --font-ar: "Tajawal", "Segoe UI", system-ui, sans-serif;
+  --font-latin: "Inter", "Segoe UI", system-ui, sans-serif;
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-base: 16px;
+  --fs-md: 17px;
+  --fs-lg: 20px;
+  --fs-xl: 24px;
+  --fs-2xl: 30px;
+  --fs-3xl: 38px;
+  --fs-4xl: 48px;
+  --lh-tight: 1.3;
+  --lh-base: 1.75;
+}
+
+[data-theme="dark"] {
+  --ink-900: #f4f4f7;
+  --ink-800: #e4e4ea;
+  --ink-700: #c8c8d2;
+  --ink-600: #a4a4b0;
+  --ink-500: #8a8a96;
+  --ink-400: #6d6d79;
+  --ink-300: #4d4d59;
+  --ink-200: #2b2b35;
+  --ink-100: #1d1d26;
+  --ink-50: #14141b;
+  --paper: #0b1220;
+  --white: #141c2b;
+  --brand-50: #10213c;
+  --brand-100: #142b4d;
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 10px 28px -10px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 26px 52px -18px rgba(0, 0, 0, 0.7);
+}
